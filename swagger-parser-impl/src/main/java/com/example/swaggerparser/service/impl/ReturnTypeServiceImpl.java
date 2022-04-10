@@ -19,7 +19,7 @@ public class ReturnTypeServiceImpl implements ReturnTypeService {
     @Override
     public String getReturnType(Operation operation) {
         String type;
-        if (operation.getResponses().containsKey("200")) {
+        if (operation.getResponses().containsKey("200") && operation.getResponses().get("200").getContent().size() > 0) {
             Schema applicationJson = operation.getResponses().get("200").getContent().get(APPLICATION_JSON).getSchema();
             if (Objects.nonNull(applicationJson.getType())) {
                 if (applicationJson.getType().equals(TYPE_ARRAY)) {
