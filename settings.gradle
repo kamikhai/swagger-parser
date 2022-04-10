@@ -1,0 +1,4 @@
+rootProject.name = 'swagger-parser'
+include 'swagger-parser-api'
+include 'swagger-parser-db'
+include 'swagger-parser-impl'

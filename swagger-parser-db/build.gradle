@@ -1,0 +1,4 @@
+bootJar.enabled = false
+task prepareKotlinBuildScriptModel {
+
+}

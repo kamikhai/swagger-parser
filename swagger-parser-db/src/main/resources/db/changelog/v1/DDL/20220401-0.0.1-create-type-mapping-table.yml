@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      author: khairullina
+      id: create_type_mapping_table
+      changes:
+        - createTable:
+            tableName: type_mapping
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_type_mapping
+              - column:
+                  name: swagger_type
+                  type: TEXT
+              - column:
+                  name: flutter_type
+                  type: TEXT

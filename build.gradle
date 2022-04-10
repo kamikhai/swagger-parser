@@ -1,0 +1,54 @@
+buildscript {
+    ext {
+        springBootVersion = '2.5.5'
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+apply plugin: 'application'
+
+def findPropertyOrEnv(String name) {
+    project.findProperty(name) ?: System.getenv(name)
+}
+
+allprojects {
+    group = 'com.example'
+    repositories() {
+        mavenCentral()
+        mavenLocal()
+    }
+}
+
+subprojects {
+    apply plugin: 'idea'
+    apply plugin: 'java'
+    apply plugin: 'java-library'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'org.springframework.boot'
+
+    sourceCompatibility = JavaVersion.VERSION_11
+    jar.archiveFileName = "${project.name}.jar"
+    version = findProperty('version');
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    dependencies {
+        annotationProcessor 'org.projectlombok:lombok'
+        compileOnly 'org.projectlombok:lombok'
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom 'com.fasterxml.jackson:jackson-bom:2.13.0'
+        }
+    }
+}

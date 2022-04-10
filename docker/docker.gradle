@@ -1,0 +1,23 @@
+ext {
+    String additionalToVersion = project.hasProperty('branchParam') ? branchParam : "";
+    dockerImageName = "${System.getenv("CI_REGISTRY_IMAGE") ?: project.name}"
+    dockerImageTag = "${System.getenv("CI_COMMIT_TAG") ?: version + additionalToVersion}"
+    dockerRegistryUrl = findPropertyOrEnv("DOCKER_REGISTRY_URL") ?: "https://index.docker.io/v1/"
+    dockerUsername = findPropertyOrEnv("DOCKER_REGISTRY_USERNAME")
+    dockerPassword = findPropertyOrEnv("DOCKER_REGISTRY_PASSWORD")
+}
+
+task buildImage(type: Exec) {
+    commandLine "docker", "build", ".", "-t", "${dockerImageName}"
+    commandLine "docker", "build", ".", "-t", "${dockerImageName}:${dockerImageTag}"
+}
+
+task loginDocker(type: Exec) {
+    dependsOn buildImage
+    commandLine "docker", "login", "-u", "${dockerUsername}", "-p", "${dockerPassword}", "${dockerRegistryUrl}"
+}
+
+task pushImage(type: Exec) {
+    dependsOn loginDocker
+    commandLine "docker", "push", "${dockerImageName}:${dockerImageTag}"
+}
