@@ -1,8 +1,10 @@
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5437}/${DB_NAME:swagger-parser}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5444}/${DB_NAME:swagger-parser}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:password}
   liquibase:
     change-log: classpath:db/changelog/database_changelog.yml
     enabled: true
+server:
+  port: 8180

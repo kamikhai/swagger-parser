@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Builder
@@ -15,4 +16,5 @@ public class FlutterObject {
 
     String name;
     List<ObjectField> fields;
+    Set<String> relatedObjects;
 }

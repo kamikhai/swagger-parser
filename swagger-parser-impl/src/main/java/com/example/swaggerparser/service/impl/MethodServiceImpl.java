@@ -4,6 +4,7 @@ import com.example.swaggerparser.dto.ApiMethod;
 import com.example.swaggerparser.service.MethodService;
 import com.example.swaggerparser.service.ParametersService;
 import com.example.swaggerparser.service.ReturnTypeService;
+import com.google.common.base.CaseFormat;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
@@ -29,12 +30,14 @@ public class MethodServiceImpl implements MethodService {
     );
 
     @Override
-    public Map<String, List<ApiMethod>> getTagsAndMethods(Paths paths) {
+    public Map<String, List<ApiMethod>> getTagsAndMethods(Paths paths, List<ApiMethod> endpointsToCreate) {
         Map<String, List<ApiMethod>> tags = new HashMap<>();
-        paths.forEach((s, pathItem) ->
+        paths.forEach((path, pathItem) ->
                 operations.forEach((operation, func) -> {
-                    if (Objects.nonNull(func.apply(pathItem))) {
-                        saveToTags(createMethod(func.apply(pathItem), operation, s), tags);
+                    Operation o = func.apply(pathItem);
+                    if (Objects.nonNull(o) && (Objects.isNull(endpointsToCreate)
+                            || endpointsToCreate.contains(ApiMethod.builder().operation(operation).path(path).build()))) {
+                        saveToTags(createMethod(o, operation, path), tags);
                     }
                 })
         );
@@ -43,6 +46,7 @@ public class MethodServiceImpl implements MethodService {
 
     private void saveToTags(ApiMethod method, Map<String, List<ApiMethod>> tags) {
         for (String tag : method.getTags()) {
+            tag = CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, tag.replace(" ", "-"));
             tags.computeIfAbsent(tag, s -> new ArrayList<>());
             tags.get(tag).add(method);
         }
@@ -53,9 +57,12 @@ public class MethodServiceImpl implements MethodService {
         method.setOperation(operation);
         method.setPath(path);
         method.setTags(o.getTags());
-        method.setReturnType(returnTypeService.getReturnType(o));
-        method.setMethodName(o.getOperationId());
-        method.setParameters(parametersService.getParameters(o));
+        List<String> objects = new ArrayList<>();
+        method.setReturnType(returnTypeService.getReturnType(o, objects));
+        method.setMethodName(CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_CAMEL, o.getOperationId()));
+        method.setParameters(parametersService.getParameters(o, objects));
+        method.setObjects(objects);
+        method.setDescription(o.getSummary());
         return method;
     }
 }

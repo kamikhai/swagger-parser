@@ -1,7 +1,7 @@
 ext {
     swaggerBootVersion = '3.0.0'
-    springDataCommons = '2.6.0'
     logastashLogbackVersion = '6.6'
+    chunkTemplatesVersion = '3.6.2'
 }
 
 dependencies {
@@ -16,6 +16,9 @@ dependencies {
     implementation 'org.liquibase:liquibase-core'
     runtimeOnly 'org.postgresql:postgresql'
     implementation "net.logstash.logback:logstash-logback-encoder:${logastashLogbackVersion}"
+    implementation "com.x5dev:chunk-templates:${chunkTemplatesVersion}"
+    implementation 'org.springframework.boot:spring-boot-starter-freemarker'
+    implementation 'org.springframework:spring-context-support:5.3.10'
 }
 
 sourceSets {

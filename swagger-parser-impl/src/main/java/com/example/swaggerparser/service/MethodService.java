@@ -7,5 +7,5 @@ import java.util.List;
 import java.util.Map;
 
 public interface MethodService {
-    Map<String, List<ApiMethod>> getTagsAndMethods(Paths paths);
+    Map<String, List<ApiMethod>> getTagsAndMethods(Paths paths, List<ApiMethod> endpointsToCreate);
 }

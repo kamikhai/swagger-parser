@@ -13,4 +13,5 @@ public class ObjectField {
 
     private String name;
     private String type;
+    private boolean isRequired;
 }
