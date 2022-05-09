@@ -23,9 +23,10 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
     private final NameConverterService nameConverterService;
 
     @Override
-    public void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, List<FlutterObject> objects) {
+    public void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, List<FlutterObject> objects, Map<String, List<String>> enums) {
         generateClients(tags, baseUrl);
         generateObjectFiles(objects);
+        generateEnums(enums);
     }
 
     private void generateClients(Map<String, List<ApiMethod>> tags, String baseUrl) {
@@ -87,6 +88,19 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
             } else {
                 content = templateProcessorService.processTemplate(params, "object_template.ftlh");
             }
+            writeToFile(content, "result/model/", filename);
+        });
+    }
+
+    private void generateEnums(Map<String, List<String>> enums) {
+        enums.forEach((name, values) -> {
+            String filename = nameConverterService.toLowerUnderscore(name);
+            Map<String, Object> params = Map.of(
+                    "file_name", filename,
+                    "class_name", name,
+                    "values", values
+            );
+            String content = templateProcessorService.processTemplate(params, "enum_template.ftlh");
             writeToFile(content, "result/model/", filename);
         });
     }

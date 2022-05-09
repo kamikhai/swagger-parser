@@ -4,6 +4,7 @@ import com.example.swaggerparser.dto.FlutterObject;
 import com.example.swaggerparser.dto.ImportObject;
 import com.example.swaggerparser.dto.ObjectField;
 import com.example.swaggerparser.entity.TypeMapping;
+import com.example.swaggerparser.service.NameConverterService;
 import com.example.swaggerparser.service.ObjectsService;
 import com.example.swaggerparser.service.TypeMappingService;
 import io.swagger.v3.oas.models.Components;
@@ -27,9 +28,10 @@ import static com.example.swaggerparser.constant.SwaggerConstant.TYPE_ARRAY;
 @RequiredArgsConstructor
 public class ObjectsServiceImpl implements ObjectsService {
     private final TypeMappingService typeMappingService;
+    private final NameConverterService nameConverterService;
 
     @Override
-    public List<FlutterObject> getObjects(Components components, Set<ImportObject> objectToCreate) {
+    public List<FlutterObject> getObjects(Components components, Set<ImportObject> objectToCreate, Map<String, List<String>> enums) {
         List<FlutterObject> objects = new ArrayList<>();
         Map<String, Schema> all = components.getSchemas();
 
@@ -84,26 +86,32 @@ public class ObjectsServiceImpl implements ObjectsService {
                                             && typeMappingService.getArrayClass(schema).get().equals(lambdaContext.parameterizationType)) {
                                         type = "List<T>";
                                     } else {
-                                        type = typeMappingService.getArrayType(schema);
+                                        type = typeMappingService.getArrayTypeOrEnum(s, schema, relatedObjects, enums);
                                         typeMappingService.getArrayClass(schema).ifPresent(cl -> {
                                             relatedObjects.add(ImportObject.builder().name(cl).build());
                                             objectToCreate.add(ImportObject.builder().name(cl).build());
                                         });
                                     }
                                 } else {
-                                    Optional<TypeMapping> typeMappingOptional = typeMappingService.getTypeMapping(schema.getType());
-                                    if (typeMappingOptional.isPresent()) {
-                                        TypeMapping typeMapping = typeMappingOptional.get();
-                                        type = typeMapping.getFlutterType();
-                                        if (Objects.nonNull(typeMapping.getImportClass())) {
-                                            relatedObjects.add(ImportObject.builder()
-                                                    .name(typeMapping.getFlutterType())
-                                                    .importClass(typeMapping.getImportClass())
-                                                    .build());
-                                        }
+                                    if (typeMappingService.isEnum(schema)) {
+                                        type = nameConverterService.toUpperCamel(s);
+                                        relatedObjects.add(ImportObject.builder().name(type).build());
+                                        enums.put(type, schema.getEnum());
                                     } else {
-                                        type = schema.getType();
-                                        log.error("Can't find type " + type);
+                                        Optional<TypeMapping> typeMappingOptional = typeMappingService.getTypeMapping(schema.getType());
+                                        if (typeMappingOptional.isPresent()) {
+                                            TypeMapping typeMapping = typeMappingOptional.get();
+                                            type = typeMapping.getFlutterType();
+                                            if (Objects.nonNull(typeMapping.getImportClass())) {
+                                                relatedObjects.add(ImportObject.builder()
+                                                        .name(typeMapping.getFlutterType())
+                                                        .importClass(typeMapping.getImportClass())
+                                                        .build());
+                                            }
+                                        } else {
+                                            type = schema.getType();
+                                            log.error("Can't find type " + type);
+                                        }
                                     }
                                 }
                                 fields.add(new ObjectField(s, type, required.contains(s)));

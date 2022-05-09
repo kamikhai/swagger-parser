@@ -8,5 +8,5 @@ import java.util.Map;
 
 public interface FileGeneratorService {
 
-    void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, List<FlutterObject> objects);
+    void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, List<FlutterObject> objects, Map<String, List<String>> enums);
 }

@@ -32,14 +32,14 @@ public class MethodServiceImpl implements MethodService {
     );
 
     @Override
-    public Map<String, List<ApiMethod>> getTagsAndMethods(Paths paths, List<ApiMethod> endpointsToCreate) {
+    public Map<String, List<ApiMethod>> getTagsAndMethods(Paths paths, List<ApiMethod> endpointsToCreate, Map<String, List<String>> enums) {
         Map<String, List<ApiMethod>> tags = new HashMap<>();
         paths.forEach((path, pathItem) ->
                 operations.forEach((operation, func) -> {
                     Operation o = func.apply(pathItem);
                     if (Objects.nonNull(o) && (Objects.isNull(endpointsToCreate)
                             || endpointsToCreate.contains(ApiMethod.builder().operation(operation).path(path).build()))) {
-                        saveToTags(createMethod(o, operation, path), tags);
+                        saveToTags(createMethod(o, operation, path, enums), tags);
                     }
                 })
         );
@@ -54,7 +54,7 @@ public class MethodServiceImpl implements MethodService {
         }
     }
 
-    private ApiMethod createMethod(Operation o, String operation, String path) {
+    private ApiMethod createMethod(Operation o, String operation, String path, Map<String, List<String>> enums) {
         ApiMethod method = new ApiMethod();
         method.setOperation(operation);
         method.setPath(path);
@@ -62,7 +62,7 @@ public class MethodServiceImpl implements MethodService {
         List<ImportObject> objects = new ArrayList<>();
         method.setReturnType(returnTypeService.getReturnType(o, objects));
         method.setMethodName(nameConverterService.toLowerCamel(o.getOperationId()));
-        method.setParameters(parametersService.getParameters(o, objects));
+        method.setParameters(parametersService.getParameters(o, objects, enums));
         method.setObjects(objects);
         method.setDescription(o.getSummary());
         return method;

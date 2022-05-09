@@ -24,18 +24,7 @@ public class ReturnTypeServiceImpl implements ReturnTypeService {
     public String getReturnType(Operation operation, List<ImportObject> objects) {
         String type;
         if (operation.getResponses().containsKey("200") && operation.getResponses().get("200").getContent().size() > 0) {
-//            Schema applicationJson;
-//            if (Objects.nonNull(operation.getResponses().get("200").getContent().get(APPLICATION_JSON))) {
-//                applicationJson = operation.getResponses().get("200").getContent().get(APPLICATION_JSON).getSchema();
-//            } else if (Objects.nonNull(operation.getResponses().get("200").getContent().get(APPLICATION_OCTET_STREAM))) {
-//                applicationJson = operation.getResponses().get("200").getContent().get(APPLICATION_OCTET_STREAM).getSchema();
-//            } else {
-//                applicationJson = operation.getResponses().get("200").getContent().get(ANY_MEDIA_TYPE).getSchema();
-//            }
             Schema applicationJson = getFirstNonNullSchema(operation);
-            if (applicationJson == null) {
-                System.out.println(123);
-            }
             if (Objects.nonNull(applicationJson.getType())) {
                 if (applicationJson.getType().equals(TYPE_ARRAY)) {
                     type = typeMappingService.getArrayType(applicationJson);
