@@ -8,14 +8,14 @@ import '${item}';
 
 part '${file_name}.g.dart';
 
-@JsonSerializable()
-class ${class_name} {
+@JsonSerializable(genericArgumentFactories: true)
+class ${class_name}<T> {
     ${class_name}(
     <#if fields?? && fields?has_content>{
         <#list fields as item>
-        <#if item.required>required </#if>this.${item.name},
+            <#if item.required>required </#if>this.${item.name},
         </#list>
-    }
+        }
     </#if>
     );
 
@@ -25,7 +25,7 @@ class ${class_name} {
     </#list>
 </#if>
 
-    factory ${class_name}.fromJson(Map<String, dynamic> json) => _$${class_name}FromJson(json);
+    factory ${class_name}.fromJson(Map<String, dynamic> json, T Function(Object? json) fromJsonT) => _$${class_name}FromJson(json, fromJsonT);
 
-    Map<String, dynamic> toJson() => _$${class_name}ToJson(this);
+    Map<String, dynamic> toJson(Object Function(T value) toJsonT) => _$${class_name}ToJson(this, toJsonT);
 }

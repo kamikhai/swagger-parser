@@ -2,8 +2,8 @@ package com.example.swaggerparser.service.impl;
 
 import com.example.swaggerparser.entity.TypeMapping;
 import com.example.swaggerparser.repository.TypeMappingRepository;
+import com.example.swaggerparser.service.NameConverterService;
 import com.example.swaggerparser.service.TypeMappingService;
-import com.google.common.base.CaseFormat;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +21,7 @@ import static com.example.swaggerparser.constant.SwaggerConstant.OBJECTS_PATH;
 public class TypeMappingServiceImpl implements TypeMappingService {
 
     private final TypeMappingRepository typeMappingRepository;
+    private final NameConverterService nameConverterService;
 
     @Override
     public String findFlutterTypeBySwaggerType(String type) {
@@ -75,12 +76,22 @@ public class TypeMappingServiceImpl implements TypeMappingService {
 
     @Override
     public String getObjectName(Schema schema) {
-        return CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, getObjectName(schema.get$ref()));
+        return nameConverterService.toLowerCamel(getObjectName(schema.get$ref()));
     }
 
     @Override
-    public String getObjectArrayName(Schema schema) {
-        return CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, getObjectName(((ArraySchema) schema).getItems().get$ref()));
+    public String getArrayName(Schema schema) {
+        String type = ((ArraySchema) schema).getItems().getType();
+        if (Objects.nonNull(type)) {
+            return nameConverterService.toLowerCamel(type) + "List";
+        } else {
+            return nameConverterService.toLowerCamel(getObjectName(((ArraySchema) schema).getItems().get$ref()));
+        }
+    }
+
+    @Override
+    public Optional<TypeMapping> getTypeMapping(String type) {
+        return typeMappingRepository.findBySwaggerType(type);
     }
 
     private String getObjectName(String ref) {

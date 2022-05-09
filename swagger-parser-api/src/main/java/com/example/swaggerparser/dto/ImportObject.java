@@ -5,17 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-import java.util.Set;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FlutterObject {
+public class ImportObject {
 
-    String name;
-    List<ObjectField> fields;
-    Set<ImportObject> relatedObjects;
-    boolean isParameterized;
+    private String name;
+    private String importClass;
 }

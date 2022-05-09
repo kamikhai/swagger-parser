@@ -3,7 +3,7 @@ import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
 <#if objects??>
 <#list objects as item>
-import 'model/${item}.dart';
+import '${item}';
 </#list>
 </#if>
 
@@ -16,7 +16,7 @@ factory ${client_name}Client(Dio dio, {String baseUrl}) = _${client_name}Client;
 <#if methods??>
     <#list methods as item>
     @${item.operation}("${item.path}")
-    ${item.returnType} ${item.methodName}(<#if item.parameters??><#list item.parameters as param>${param},</#list></#if>);
+    ${item.returnType} ${item.methodName}(<#if item.parameters??><#list item.parameters as param>${param}, </#list></#if>);
 
     </#list>
 </#if>

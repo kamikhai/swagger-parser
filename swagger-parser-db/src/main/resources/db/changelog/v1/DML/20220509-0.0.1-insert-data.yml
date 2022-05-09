@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      author: khairullina
+      id: insert_data
+      changes:
+        - sqlFile:
+            dbms: postgresql
+            splitStatements: false
+            stripComments: false
+            encoding: UTF8
+            relativeToChangelogFile: true
+            path: sql/20220509-0.0.1-insert-data.sql

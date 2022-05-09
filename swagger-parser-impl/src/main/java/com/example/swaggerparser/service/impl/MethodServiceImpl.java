@@ -1,10 +1,11 @@
 package com.example.swaggerparser.service.impl;
 
 import com.example.swaggerparser.dto.ApiMethod;
+import com.example.swaggerparser.dto.ImportObject;
 import com.example.swaggerparser.service.MethodService;
+import com.example.swaggerparser.service.NameConverterService;
 import com.example.swaggerparser.service.ParametersService;
 import com.example.swaggerparser.service.ReturnTypeService;
-import com.google.common.base.CaseFormat;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
@@ -20,6 +21,7 @@ public class MethodServiceImpl implements MethodService {
 
     private final ParametersService parametersService;
     private final ReturnTypeService returnTypeService;
+    private final NameConverterService nameConverterService;
 
     private static final Map<String, Function<PathItem, Operation>> operations = Map.of(
             "GET", PathItem::getGet,
@@ -46,7 +48,7 @@ public class MethodServiceImpl implements MethodService {
 
     private void saveToTags(ApiMethod method, Map<String, List<ApiMethod>> tags) {
         for (String tag : method.getTags()) {
-            tag = CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, tag.replace(" ", "-"));
+            tag = nameConverterService.toUpperCamel(tag);
             tags.computeIfAbsent(tag, s -> new ArrayList<>());
             tags.get(tag).add(method);
         }
@@ -57,9 +59,9 @@ public class MethodServiceImpl implements MethodService {
         method.setOperation(operation);
         method.setPath(path);
         method.setTags(o.getTags());
-        List<String> objects = new ArrayList<>();
+        List<ImportObject> objects = new ArrayList<>();
         method.setReturnType(returnTypeService.getReturnType(o, objects));
-        method.setMethodName(CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_CAMEL, o.getOperationId()));
+        method.setMethodName(nameConverterService.toLowerCamel(o.getOperationId()));
         method.setParameters(parametersService.getParameters(o, objects));
         method.setObjects(objects);
         method.setDescription(o.getSummary());

@@ -30,4 +30,6 @@ public class TypeMapping {
     private String swaggerType;
 
     private String flutterType;
+
+    private String importClass;
 }

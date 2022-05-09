@@ -1,5 +1,8 @@
 package com.example.swaggerparser.service.impl;
 
+import com.example.swaggerparser.dto.ImportObject;
+import com.example.swaggerparser.entity.TypeMapping;
+import com.example.swaggerparser.service.NameConverterService;
 import com.example.swaggerparser.service.ParametersService;
 import com.example.swaggerparser.service.TypeMappingService;
 import io.swagger.v3.oas.models.Operation;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.example.swaggerparser.constant.SwaggerConstant.*;
 
@@ -19,35 +23,59 @@ import static com.example.swaggerparser.constant.SwaggerConstant.*;
 @RequiredArgsConstructor
 public class ParametersServiceImpl implements ParametersService {
     private final TypeMappingService typeMappingService;
+    private final NameConverterService nameConverterService;
 
     @Override
-    public List<String> getParameters(Operation operation, List<String> objects) {
+    public List<String> getParameters(Operation operation, List<ImportObject> objects) {
         List<String> params = new ArrayList<>();
         getPathAndQueryParams(operation, params);
         getRequestBody(operation, params, objects);
         return params;
     }
 
-    private void getRequestBody(Operation operation, List<String> params, List<String> objects) {
+    private void getRequestBody(Operation operation, List<String> params, List<ImportObject> objects) {
         if (Objects.nonNull(operation.getRequestBody())) {
             if (Objects.nonNull(operation.getRequestBody().getContent().get(APPLICATION_OCTET_STREAM)) ||
                     Objects.nonNull(operation.getRequestBody().getContent().get(MULTIPART_FORM_DATA))) {
                 params.add(FILE_PARAM);
-            } else if (Objects.nonNull(operation.getRequestBody().getContent().get(APPLICATION_JSON))) {
-                Schema applicationJson = operation.getRequestBody().getContent().get(APPLICATION_JSON).getSchema();
+                typeMappingService.getTypeMapping("file").ifPresent(typeMapping -> objects.add(ImportObject.builder()
+                                .name(typeMapping.getFlutterType())
+                                .importClass(typeMapping.getImportClass())
+                        .build()));
+            } else {
+                Schema applicationJson = operation.getRequestBody().getContent().entrySet().iterator().next().getValue().getSchema();
                 String type, name;
                 if (Objects.nonNull(applicationJson.getType()) && applicationJson.getType().equals(TYPE_ARRAY)) {
                     type = typeMappingService.getArrayType(applicationJson);
-                    name = typeMappingService.getObjectArrayName(applicationJson);
-                    typeMappingService.getArrayClass(applicationJson).ifPresent(objects::add);
+                    name = typeMappingService.getArrayName(applicationJson);
+                    typeMappingService.getArrayClass(applicationJson).ifPresent(s -> objects.add(ImportObject.builder().name(s).build()));
                 } else {
                     type = typeMappingService.getObjectType(applicationJson);
-                    name = typeMappingService.getObjectName(applicationJson);
-                    objects.add(type);
+                    if (type.contains("«")) {
+                        String cl = type.substring(0, type.indexOf("«"));
+                        objects.add(ImportObject.builder().name(cl).build());
+                        String subClass = type.substring(type.indexOf("«") + 1, (type.indexOf("»")));
+                        Optional<TypeMapping> typeMappingOptional = typeMappingService.getTypeMapping(subClass);
+                        if (typeMappingOptional.isPresent()) {
+                            TypeMapping typeMapping = typeMappingOptional.get();
+                            subClass = typeMapping.getFlutterType();
+                            objects.add(ImportObject.builder()
+                                    .name(typeMapping.getFlutterType())
+                                    .importClass(typeMapping.getImportClass())
+                                    .build());
+                        } else {
+                            objects.add(ImportObject.builder()
+                                    .name(subClass)
+                                    .build());
+                        }
+                        type = String.format("%s<%s>", cl, subClass);
+                        name = nameConverterService.toLowerCamel(cl);
+                    } else {
+                        objects.add(ImportObject.builder().name(type).build());
+                        name = typeMappingService.getObjectName(applicationJson);
+                    }
                 }
                 params.add(String.format(PARAMS, BODY_PARAM, type, name));
-            } else {
-                log.error("MIME type application/json not found");
             }
         }
     }
@@ -72,7 +100,12 @@ public class ParametersServiceImpl implements ParametersService {
                 } else if (parameter.getIn().equals("header")) {
                     return;
                 }
-                params.add(String.format(PARAMS, annotation, type, parameter.getName()));
+                String name = parameter.getName();
+                if (name.contains(".")) {
+                    String[] strings = name.split("\\.");
+                    name = strings[strings.length - 1];
+                }
+                params.add(String.format(PARAMS, annotation, type, nameConverterService.toLowerCamel(name)));
             });
         }
     }

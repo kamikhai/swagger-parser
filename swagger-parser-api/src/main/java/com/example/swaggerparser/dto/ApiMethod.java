@@ -31,7 +31,7 @@ public class ApiMethod {
     @JsonView(Short.class)
     private String description;
 
-    private List<String> objects;
+    private List<ImportObject> objects;
 
     @Override
     public boolean equals(Object o) {

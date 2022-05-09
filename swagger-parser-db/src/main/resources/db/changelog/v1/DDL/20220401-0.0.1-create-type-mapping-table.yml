@@ -19,3 +19,6 @@ databaseChangeLog:
               - column:
                   name: flutter_type
                   type: TEXT
+              - column:
+                  name: import_class
+                  type: TEXT
