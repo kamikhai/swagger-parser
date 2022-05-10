@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.example.swaggerparser.constant.SwaggerConstant.*;
+
 @Service
 @RequiredArgsConstructor
 public class FileGeneratorServiceImpl implements FileGeneratorService {
@@ -49,7 +51,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
                     "methods", tag.getValue(),
                     "objects", objects
             );
-            String content = templateProcessorService.processTemplate(params, "client_template.ftlh");
+            String content = templateProcessorService.processTemplate(params, CLIENT_TEMPLATE);
             writeToFile(content, "result/", filename);
         });
     }
@@ -57,7 +59,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
     private void writeToFile(String content, String folder, String filename) {
         BufferedWriter writer = null;
         try {
-            writer = new BufferedWriter(new FileWriter(folder + filename + ".dart"));
+            writer = new BufferedWriter(new FileWriter(folder + filename + DART_EXTENSION));
             writer.write(content);
             writer.close();
         } catch (IOException e) {
@@ -82,12 +84,8 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
                     "fields", object.getFields(),
                     "objects", relatedObjects
             );
-            String content;
-            if (object.isParameterized()) {
-                content = templateProcessorService.processTemplate(params, "parameterized_object_template.ftlh");
-            } else {
-                content = templateProcessorService.processTemplate(params, "object_template.ftlh");
-            }
+            String templateName = object.isParameterized() ? PARAMETERIZED_OBJECT_TEMPLATE : OBJECT_TEMPLATE;
+            String content = templateProcessorService.processTemplate(params, templateName);
             writeToFile(content, "result/model/", filename);
         });
     }
@@ -100,7 +98,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
                     "class_name", name,
                     "values", values
             );
-            String content = templateProcessorService.processTemplate(params, "enum_template.ftlh");
+            String content = templateProcessorService.processTemplate(params, ENUM_TEMPLATE);
             writeToFile(content, "result/model/", filename);
         });
     }

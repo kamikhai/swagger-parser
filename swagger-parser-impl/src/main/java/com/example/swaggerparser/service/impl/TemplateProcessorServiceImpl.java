@@ -15,7 +15,6 @@ import java.util.Map;
 public class TemplateProcessorServiceImpl implements TemplateProcessorService {
     private final Configuration freeMarkerConfigurationFactoryBean;
 
-
     public String processTemplate(Map<String, Object> params, String templateName) {
         try {
             return FreeMarkerTemplateUtils.processTemplateIntoString(

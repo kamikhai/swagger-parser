@@ -36,5 +36,9 @@ public interface TypeMappingService {
 
     String getTypeOrEnum(String name, Schema schema, List<ImportObject> objects, Map<String, List<String>> enums);
 
+    String getEnum(String name, Collection<ImportObject> objects, Schema schema, Map<String, List<String>> enums);
+
     String getArrayTypeOrEnum(String name, Schema schema, Collection<ImportObject> objects, Map<String, List<String>> enums);
+
+    String getParameterizedClassType(String cl, String type, List<ImportObject> objects);
 }

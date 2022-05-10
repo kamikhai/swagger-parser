@@ -3,10 +3,12 @@ package com.example.swaggerparser.service.impl;
 import com.example.swaggerparser.dto.FlutterObject;
 import com.example.swaggerparser.dto.ImportObject;
 import com.example.swaggerparser.dto.ObjectField;
+import com.example.swaggerparser.dto.ParameterizationInfo;
 import com.example.swaggerparser.entity.TypeMapping;
-import com.example.swaggerparser.service.NameConverterService;
+import com.example.swaggerparser.mapper.ImportObjectMapper;
 import com.example.swaggerparser.service.ObjectsService;
 import com.example.swaggerparser.service.TypeMappingService;
+import com.example.swaggerparser.util.ParameterizedClassesUtil;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
@@ -18,7 +20,6 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.example.swaggerparser.constant.SwaggerConstant.TYPE_ARRAY;
@@ -28,7 +29,7 @@ import static com.example.swaggerparser.constant.SwaggerConstant.TYPE_ARRAY;
 @RequiredArgsConstructor
 public class ObjectsServiceImpl implements ObjectsService {
     private final TypeMappingService typeMappingService;
-    private final NameConverterService nameConverterService;
+    private final ImportObjectMapper importObjectMapper;
 
     @Override
     public List<FlutterObject> getObjects(Components components, Set<ImportObject> objectToCreate, Map<String, List<String>> enums) {
@@ -36,102 +37,131 @@ public class ObjectsServiceImpl implements ObjectsService {
         Map<String, Schema> all = components.getSchemas();
 
         while (!objectToCreate.isEmpty()) {
-
             ImportObject o = objectToCreate.stream().findFirst().get();
             if (Objects.isNull(o.getImportClass())) {
                 String name = o.getName();
-                var lambdaContext = new Object() {
-                    boolean isParameterized;
-                    String parameterizationType;
-                };
-                Schema object = null;
-                Pattern pattern = Pattern.compile("^" + name + "«.*»");
-                Optional<Map.Entry<String, Schema>> first = all.entrySet().stream().filter(entry -> {
-                    Matcher matcher = pattern.matcher(entry.getKey());
-                    return matcher.matches();
-                }).findFirst();
-                if (first.isPresent()) {
-                    lambdaContext.isParameterized = true;
-                    String key = first.get().getKey();
-                    lambdaContext.parameterizationType = key.substring(key.indexOf("«") + 1, (key.indexOf("»")));
-                    object = first.get().getValue();
-                } else if (all.containsKey(name)) {
-                    lambdaContext.isParameterized = false;
-                    lambdaContext.parameterizationType = "";
-                    object = all.get(name);
-                }
+                ParameterizationInfo parameterizationInfo = new ParameterizationInfo();
+                Schema objectSchema = getObjectSchema(name, parameterizationInfo, all);
 
-                if (Objects.nonNull(object)) {
-                    Set<ImportObject> relatedObjects = new HashSet<>();
-                    List<ObjectField> fields = new ArrayList<>();
-                    if (object instanceof ComposedSchema) {
-                        object = ((ComposedSchema) object).getAllOf().stream().filter(ObjectSchema.class::isInstance)
-                                .findFirst().orElse(null);
-                    }
-                    if (Objects.nonNull(object)) {
-                        List<String> required = Objects.nonNull(object.getRequired()) ? object.getRequired() : List.of();
-                        if (Objects.nonNull(object.getProperties())) {
-                            object.getProperties().forEach((BiConsumer<String, Schema>) (s, schema) -> {
-                                String type;
-                                if (Objects.isNull(schema.getType())) {
-                                    type = typeMappingService.getObjectType(schema);
-                                    if (lambdaContext.isParameterized && type.equals(lambdaContext.parameterizationType)) {
-                                        type = "T";
-                                    } else {
-                                        relatedObjects.add(ImportObject.builder().name(type).build());
-                                        objectToCreate.add(ImportObject.builder().name(type).build());
-                                    }
-                                } else if (schema.getType().equals(TYPE_ARRAY)) {
-                                    if (lambdaContext.isParameterized && typeMappingService.getArrayClass(schema).isPresent()
-                                            && typeMappingService.getArrayClass(schema).get().equals(lambdaContext.parameterizationType)) {
-                                        type = "List<T>";
-                                    } else {
-                                        type = typeMappingService.getArrayTypeOrEnum(s, schema, relatedObjects, enums);
-                                        typeMappingService.getArrayClass(schema).ifPresent(cl -> {
-                                            relatedObjects.add(ImportObject.builder().name(cl).build());
-                                            objectToCreate.add(ImportObject.builder().name(cl).build());
-                                        });
-                                    }
-                                } else {
-                                    if (typeMappingService.isEnum(schema)) {
-                                        type = nameConverterService.toUpperCamel(s);
-                                        relatedObjects.add(ImportObject.builder().name(type).build());
-                                        enums.put(type, schema.getEnum());
-                                    } else {
-                                        Optional<TypeMapping> typeMappingOptional = typeMappingService.getTypeMapping(schema.getType());
-                                        if (typeMappingOptional.isPresent()) {
-                                            TypeMapping typeMapping = typeMappingOptional.get();
-                                            type = typeMapping.getFlutterType();
-                                            if (Objects.nonNull(typeMapping.getImportClass())) {
-                                                relatedObjects.add(ImportObject.builder()
-                                                        .name(typeMapping.getFlutterType())
-                                                        .importClass(typeMapping.getImportClass())
-                                                        .build());
-                                            }
-                                        } else {
-                                            type = schema.getType();
-                                            log.error("Can't find type " + type);
-                                        }
-                                    }
-                                }
-                                fields.add(new ObjectField(s, type, required.contains(s)));
-                            });
-                        }
-                    }
-                    objects.add(new FlutterObject(name.replace(" ", ""), fields, relatedObjects, lambdaContext.isParameterized));
-                    if (lambdaContext.isParameterized) {
-                        List<String> toRemove = all.entrySet().stream().map(Map.Entry::getKey).filter(key -> {
-                            Matcher matcher = pattern.matcher(key);
-                            return matcher.matches();
-                        }).collect(Collectors.toList());
-                        toRemove.forEach(all::remove);
-                    } else {
-                        all.remove(name);
-                    }
+                Set<ImportObject> relatedObjects = new HashSet<>();
+                List<ObjectField> fields = new ArrayList<>();
+                objectSchema = checkToComposedObjectSchema(objectSchema);
+                if (Objects.nonNull(objectSchema) && Objects.nonNull(objectSchema.getProperties())) {
+                    List<String> required = Objects.nonNull(objectSchema.getRequired()) ? objectSchema.getRequired() : List.of();
+                    objectSchema.getProperties().forEach((BiConsumer<String, Schema>) (s, schema) -> {
+                        String type = getFieldType(schema, relatedObjects, objectToCreate, parameterizationInfo, s, enums);
+                        fields.add(new ObjectField(s, type, required.contains(s)));
+                    });
                 }
+                objects.add(new FlutterObject(name.replace(" ", ""), fields, relatedObjects, parameterizationInfo.isParameterized()));
+                removeCreated(all, name, parameterizationInfo);
             }
             objectToCreate.remove(o);
         }
         return objects;
     }
+
+    private String getFieldType(Schema schema, Set<ImportObject> relatedObjects, Set<ImportObject> objectToCreate,
+                                ParameterizationInfo parameterizationInfo, String s, Map<String, List<String>> enums) {
+        String type;
+        if (Objects.isNull(schema.getType())) {
+            type = getObjectType(schema, relatedObjects, objectToCreate, parameterizationInfo);
+        } else if (schema.getType().equals(TYPE_ARRAY)) {
+            type = getArrayType(schema, relatedObjects, objectToCreate, parameterizationInfo, s, enums);
+        } else {
+            type = getSimpleType(schema, relatedObjects, enums, s);
+        }
+        return type;
+    }
+
+    private String getSimpleType(Schema schema, Set<ImportObject> relatedObjects, Map<String, List<String>> enums, String s) {
+        String type;
+        if (typeMappingService.isEnum(schema)) {
+            type = typeMappingService.getEnum(s, relatedObjects, schema, enums);
+        } else {
+            Optional<TypeMapping> typeMappingOptional = typeMappingService.getTypeMapping(schema.getType());
+            if (typeMappingOptional.isPresent()) {
+                TypeMapping typeMapping = typeMappingOptional.get();
+                type = typeMapping.getFlutterType();
+                if (Objects.nonNull(typeMapping.getImportClass())) {
+                    relatedObjects.add(importObjectMapper.toDto(typeMapping));
+                }
+            } else {
+                type = schema.getType();
+                log.error("Can't find type " + type);
+            }
+        }
+        return type;
+    }
+
+    private String getArrayType(Schema schema, Set<ImportObject> relatedObjects, Set<ImportObject> objectToCreate,
+                                ParameterizationInfo parameterizationInfo, String s, Map<String, List<String>> enums) {
+        String type;
+        if (parameterizationInfo.isParameterized() && typeMappingService.getArrayClass(schema).isPresent()
+                && typeMappingService.getArrayClass(schema).get().equals(parameterizationInfo.getParameterizationType())) {
+            type = "List<T>";
+        } else {
+            type = typeMappingService.getArrayTypeOrEnum(s, schema, relatedObjects, enums);
+            typeMappingService.getArrayClass(schema).ifPresent(cl -> {
+                relatedObjects.add(ImportObject.builder().name(cl).build());
+                objectToCreate.add(ImportObject.builder().name(cl).build());
+            });
+        }
+        return type;
+    }
+
+    private String getObjectType(Schema schema, Set<ImportObject> relatedObjects, Set<ImportObject> objectToCreate,
+                                 ParameterizationInfo parameterizationInfo) {
+        String type = typeMappingService.getObjectType(schema);
+        if (parameterizationInfo.isParameterized() && type.equals(parameterizationInfo.getParameterizationType())) {
+            type = "T";
+        } else {
+            relatedObjects.add(ImportObject.builder().name(type).build());
+            objectToCreate.add(ImportObject.builder().name(type).build());
+        }
+        return type;
+    }
+
+    private Schema checkToComposedObjectSchema(Schema objectSchema) {
+        if (objectSchema instanceof ComposedSchema) {
+            objectSchema = ((ComposedSchema) objectSchema).getAllOf().stream().filter(ObjectSchema.class::isInstance)
+                    .findFirst().orElse(null);
+        }
+        return objectSchema;
+    }
+
+    private void removeCreated(Map<String, Schema> all, String name, ParameterizationInfo parameterizationInfo) {
+        if (parameterizationInfo.isParameterized()) {
+            List<String> toRemove = all.keySet().stream().filter(key ->
+                    ParameterizedClassesUtil.getParameterizedClassPattern(name).matcher(key).matches()
+            ).collect(Collectors.toList());
+            toRemove.forEach(all::remove);
+        } else {
+            all.remove(name);
+        }
+    }
+
+    private Schema getObjectSchema(String name, ParameterizationInfo parameterizationInfo, Map<String, Schema> all) {
+        Schema objectSchema = null;
+
+        Optional<Map.Entry<String, Schema>> first = findClassByPattern(name, all);
+        if (first.isPresent()) {
+            parameterizationInfo.setParameterized(true);
+            parameterizationInfo.setParameterizationType(ParameterizedClassesUtil.getParameterizationType(first.get().getKey()));
+            objectSchema = first.get().getValue();
+        } else if (all.containsKey(name)) {
+            parameterizationInfo.setParameterized(false);
+            parameterizationInfo.setParameterizationType("");
+            objectSchema = all.get(name);
+        }
+        return objectSchema;
+    }
+
+    private Optional<Map.Entry<String, Schema>> findClassByPattern(String name, Map<String, Schema> all) {
+        return all.entrySet().stream().filter(entry -> {
+            Matcher matcher = ParameterizedClassesUtil.getParameterizedClassPattern(name).matcher(entry.getKey());
+            return matcher.matches();
+        }).findFirst();
+    }
+
 }

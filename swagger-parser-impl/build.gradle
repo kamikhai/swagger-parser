@@ -2,6 +2,7 @@ ext {
     swaggerBootVersion = '3.0.0'
     logastashLogbackVersion = '6.6'
     chunkTemplatesVersion = '3.6.2'
+    mapStructVersion = '1.4.2.Final'
 }
 
 dependencies {
@@ -19,6 +20,7 @@ dependencies {
     implementation "com.x5dev:chunk-templates:${chunkTemplatesVersion}"
     implementation 'org.springframework.boot:spring-boot-starter-freemarker'
     implementation 'org.springframework:spring-context-support:5.3.10'
+    implementation "org.mapstruct:mapstruct:${mapStructVersion}"
 }
 
 sourceSets {

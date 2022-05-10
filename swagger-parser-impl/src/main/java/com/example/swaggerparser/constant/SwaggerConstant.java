@@ -19,6 +19,17 @@ public class SwaggerConstant {
     public static final String PARAMS = "%s %s %s";
     public static final String FUTURE_TYPE = "Future<%s>";
     public static final String MAP_TYPE = "Map<String, %s>";
+    public static final String LIST_TYPE = "List<%s>";
+    public static final String PARAMETERIZED_CLASS_TYPE = "%s<%s>";
     public static final String MAP_PARAMS = "Map<String, String>";
+    public static final String DART_EXTENSION = ".dart";
+    public static final String PARAMETERIZATION_SYMBOL_1 = "«";
+    public static final String PARAMETERIZATION_SYMBOL_2 = "»";
+
+    // Templates
+    public static final String CLIENT_TEMPLATE = "client_template.ftlh";
+    public static final String ENUM_TEMPLATE = "enum_template.ftlh";
+    public static final String OBJECT_TEMPLATE = "object_template.ftlh";
+    public static final String PARAMETERIZED_OBJECT_TEMPLATE = "parameterized_object_template.ftlh";
 
 }

@@ -2,9 +2,11 @@ package com.example.swaggerparser.service.impl;
 
 import com.example.swaggerparser.dto.ImportObject;
 import com.example.swaggerparser.entity.TypeMapping;
+import com.example.swaggerparser.mapper.ImportObjectMapper;
 import com.example.swaggerparser.repository.TypeMappingRepository;
 import com.example.swaggerparser.service.NameConverterService;
 import com.example.swaggerparser.service.TypeMappingService;
+import com.example.swaggerparser.util.ParameterizedClassesUtil;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
-import static com.example.swaggerparser.constant.SwaggerConstant.OBJECTS_PATH;
+import static com.example.swaggerparser.constant.SwaggerConstant.*;
 
 @Slf4j
 @Service
@@ -22,6 +24,7 @@ public class TypeMappingServiceImpl implements TypeMappingService {
 
     private final TypeMappingRepository typeMappingRepository;
     private final NameConverterService nameConverterService;
+    private final ImportObjectMapper importObjectMapper;
 
     @Override
     public String findFlutterTypeBySwaggerType(String type) {
@@ -36,11 +39,11 @@ public class TypeMappingServiceImpl implements TypeMappingService {
 
     @Override
     public String getSimpleArrayType(Schema schema) {
-        return String.format("List<%s>", findFlutterTypeBySwaggerType(((ArraySchema) schema).getItems().getType()));
+        return String.format(LIST_TYPE, findFlutterTypeBySwaggerType(((ArraySchema) schema).getItems().getType()));
     }
 
     private String getObjectArrayType(Schema schema) {
-        return String.format("List<%s>", getObjectArrayClass(schema));
+        return String.format(LIST_TYPE, getObjectArrayClass(schema));
     }
 
     private String getObjectArrayClass(Schema schema) {
@@ -113,12 +116,18 @@ public class TypeMappingServiceImpl implements TypeMappingService {
     public String getTypeOrEnum(String name, Schema schema, List<ImportObject> objects, Map<String, List<String>> enums) {
         String type;
         if (isEnum(schema)) {
-            type = nameConverterService.toUpperCamel(name);
-            objects.add(ImportObject.builder().name(type).build());
-            enums.put(type, schema.getEnum());
+            type = getEnum(name, objects, schema, enums);
         } else {
             type = getType(schema);
         }
+        return type;
+    }
+
+    @Override
+    public String getEnum(String name, Collection<ImportObject> objects, Schema schema, Map<String, List<String>> enums) {
+        String type = nameConverterService.toUpperCamel(name);
+        objects.add(ImportObject.builder().name(type).build());
+        enums.put(type, schema.getEnum());
         return type;
     }
 
@@ -129,11 +138,28 @@ public class TypeMappingServiceImpl implements TypeMappingService {
             type = nameConverterService.toUpperCamel(name);
             objects.add(ImportObject.builder().name(type).build());
             enums.put(type, getArrayEnums(schema));
-            type = String.format("List<%s>", type);
+            type = String.format(LIST_TYPE, type);
         } else {
             type = getSimpleArrayType(schema);
         }
         return type;
+    }
+
+    @Override
+    public String getParameterizedClassType(String cl, String type, List<ImportObject> objects) {
+        objects.add(ImportObject.builder().name(cl).build());
+        String subClass = ParameterizedClassesUtil.getParameterizationType(type);
+        Optional<TypeMapping> typeMappingOptional = getTypeMapping(subClass);
+        if (typeMappingOptional.isPresent()) {
+            TypeMapping typeMapping = typeMappingOptional.get();
+            subClass = typeMapping.getFlutterType();
+            objects.add(importObjectMapper.toDto(typeMapping));
+        } else {
+            objects.add(ImportObject.builder()
+                    .name(subClass)
+                    .build());
+        }
+        return String.format(PARAMETERIZED_CLASS_TYPE, cl, subClass);
     }
 
     private String getObjectName(String ref) {

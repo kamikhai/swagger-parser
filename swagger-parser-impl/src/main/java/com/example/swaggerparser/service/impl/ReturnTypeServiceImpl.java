@@ -2,8 +2,10 @@ package com.example.swaggerparser.service.impl;
 
 import com.example.swaggerparser.dto.ImportObject;
 import com.example.swaggerparser.entity.TypeMapping;
+import com.example.swaggerparser.mapper.ImportObjectMapper;
 import com.example.swaggerparser.service.ReturnTypeService;
 import com.example.swaggerparser.service.TypeMappingService;
+import com.example.swaggerparser.util.ParameterizedClassesUtil;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.RequiredArgsConstructor;
@@ -26,42 +28,38 @@ public class ReturnTypeServiceImpl implements ReturnTypeService {
         if (operation.getResponses().containsKey("200") && operation.getResponses().get("200").getContent().size() > 0) {
             Schema applicationJson = getFirstNonNullSchema(operation);
             if (Objects.nonNull(applicationJson.getType())) {
-                if (applicationJson.getType().equals(TYPE_ARRAY)) {
-                    type = typeMappingService.getArrayType(applicationJson);
-                    typeMappingService.getArrayClass(applicationJson).ifPresent(s -> objects.add(ImportObject.builder().name(s).build()));
-                } else if (applicationJson.getType().equals(TYPE_OBJECT)) {
-                    type = String.format(MAP_TYPE, typeMappingService.getType((Schema) applicationJson.getAdditionalProperties()));
-                } else {
-                    type = typeMappingService.getType(applicationJson);
-                }
+                type = getSimpleType(objects, applicationJson);
             } else {
-                type = typeMappingService.getObjectType(applicationJson);
-                if (type.contains("«")) {
-                    String cl = type.substring(0, type.indexOf("«"));
-                    objects.add(ImportObject.builder().name(cl).build());
-                    String subtype = type.substring(type.indexOf("«") + 1, (type.indexOf("»")));
-                    Optional<TypeMapping> typeMappingOptional = typeMappingService.getTypeMapping(subtype);
-                    if (typeMappingOptional.isPresent()) {
-                        TypeMapping typeMapping = typeMappingOptional.get();
-                        subtype = typeMapping.getFlutterType();
-                        objects.add(ImportObject.builder()
-                                .name(typeMapping.getFlutterType())
-                                .importClass(typeMapping.getImportClass())
-                                .build());
-                    } else {
-                        objects.add(ImportObject.builder()
-                                .name(subtype)
-                                .build());
-                    }
-                    type = String.format("%s<%s>", cl, subtype);
-                } else {
-                    objects.add(ImportObject.builder().name(type).build());
-                }
+                type = getObjectType(objects, applicationJson);
             }
         } else {
             type = "void";
         }
         return String.format(FUTURE_TYPE, type);
+    }
+
+    private String getSimpleType(List<ImportObject> objects, Schema applicationJson) {
+        String type;
+        if (applicationJson.getType().equals(TYPE_ARRAY)) {
+            type = typeMappingService.getArrayType(applicationJson);
+            typeMappingService.getArrayClass(applicationJson).ifPresent(s -> objects.add(ImportObject.builder().name(s).build()));
+        } else if (applicationJson.getType().equals(TYPE_OBJECT)) {
+            type = String.format(MAP_TYPE, typeMappingService.getType((Schema) applicationJson.getAdditionalProperties()));
+        } else {
+            type = typeMappingService.getType(applicationJson);
+        }
+        return type;
+    }
+
+    private String getObjectType(List<ImportObject> objects, Schema applicationJson) {
+        String type = typeMappingService.getObjectType(applicationJson);
+        if (ParameterizedClassesUtil.isParameterizedClass(type)) {
+            String cl = ParameterizedClassesUtil.getParameterizedClass(type);
+            type = typeMappingService.getParameterizedClassType(cl, type, objects);
+        } else {
+            objects.add(ImportObject.builder().name(type).build());
+        }
+        return type;
     }
 
     private Schema getFirstNonNullSchema(Operation operation) {
