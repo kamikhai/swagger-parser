@@ -6,5 +6,9 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/database_changelog.yml
     enabled: true
+  servler:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 server:
   port: 8180

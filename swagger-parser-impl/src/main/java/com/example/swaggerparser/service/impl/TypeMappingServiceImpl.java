@@ -126,7 +126,7 @@ public class TypeMappingServiceImpl implements TypeMappingService {
     @Override
     public String getEnum(String name, Collection<ImportObject> objects, Schema schema, Map<String, List<String>> enums) {
         String type = nameConverterService.toUpperCamel(name);
-        objects.add(ImportObject.builder().name(type).build());
+        objects.add(ImportObject.builder().name(type).importClass("").build());
         enums.put(type, schema.getEnum());
         return type;
     }
@@ -136,7 +136,7 @@ public class TypeMappingServiceImpl implements TypeMappingService {
         String type;
         if (isEnumArray(schema)) {
             type = nameConverterService.toUpperCamel(name);
-            objects.add(ImportObject.builder().name(type).build());
+            objects.add(ImportObject.builder().name(type).importClass("").build());
             enums.put(type, getArrayEnums(schema));
             type = String.format(LIST_TYPE, type);
         } else {

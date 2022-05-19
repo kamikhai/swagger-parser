@@ -32,8 +32,8 @@ public class ObjectsServiceImpl implements ObjectsService {
     private final ImportObjectMapper importObjectMapper;
 
     @Override
-    public List<FlutterObject> getObjects(Components components, Set<ImportObject> objectToCreate, Map<String, List<String>> enums) {
-        List<FlutterObject> objects = new ArrayList<>();
+    public Set<FlutterObject> getObjects(Components components, Set<ImportObject> objectToCreate, Map<String, List<String>> enums) {
+        Set<FlutterObject> objects = new HashSet<>();
         Map<String, Schema> all = components.getSchemas();
 
         while (!objectToCreate.isEmpty()) {

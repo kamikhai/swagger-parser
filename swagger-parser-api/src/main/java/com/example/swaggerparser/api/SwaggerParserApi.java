@@ -1,21 +1,34 @@
 package com.example.swaggerparser.api;
 
 import com.example.swaggerparser.dto.ApiMethod;
+import com.example.swaggerparser.dto.ImportObject;
 import com.fasterxml.jackson.annotation.JsonView;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
 
 @RequestMapping("/api/v1")
 public interface SwaggerParserApi {
 
-    @GetMapping("/parse")
-    void parse(@JsonView(ApiMethod.Short.class) @RequestBody List<ApiMethod> endpointsToCreate);
+    @PostMapping("/parse")
+    ResponseEntity<Resource> parse(@RequestPart("data") String endpointsToCreate,
+                                   @RequestPart(value = "file") MultipartFile file);
+
+    @PostMapping("/parse/url")
+    ResponseEntity<Resource> parse(@RequestBody List<ApiMethod> endpointsToCreate,
+               @RequestParam(value = "url") String url);
 
     @JsonView(ApiMethod.Short.class)
-    @GetMapping("/parse/schema")
-    Map<String, List<ApiMethod>> parseSchema();
+    @PostMapping("/parse/schema")
+    Map<String, List<ApiMethod>> parseSchema(@RequestParam(value = "file") MultipartFile file);
+
+    @JsonView(ApiMethod.Short.class)
+    @PostMapping("/parse/url/schema")
+    Map<String, List<ApiMethod>> parseSchema(@RequestParam(value = "url") String url);
 }

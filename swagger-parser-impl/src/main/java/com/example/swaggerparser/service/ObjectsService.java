@@ -9,5 +9,5 @@ import java.util.Map;
 import java.util.Set;
 
 public interface ObjectsService {
-    List<FlutterObject> getObjects(Components components, Set<ImportObject> objectToCreate, Map<String, List<String>> enums);
+    Set<FlutterObject> getObjects(Components components, Set<ImportObject> objectToCreate, Map<String, List<String>> enums);
 }

@@ -21,6 +21,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-freemarker'
     implementation 'org.springframework:spring-context-support:5.3.10'
     implementation "org.mapstruct:mapstruct:${mapStructVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapStructVersion}"
+    implementation 'org.json:json:20220320'
+
 }
 
 sourceSets {
@@ -31,6 +34,10 @@ sourceSets {
             ]
         }
     }
+}
+
+compileJava {
+    options.compilerArgs = ['-Amapstruct.defaultComponentModel=spring']
 }
 
 task prepareKotlinBuildScriptModel {

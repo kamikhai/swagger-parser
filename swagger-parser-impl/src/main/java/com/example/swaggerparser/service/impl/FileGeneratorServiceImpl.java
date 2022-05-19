@@ -8,13 +8,15 @@ import com.example.swaggerparser.service.TemplateProcessorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static com.example.swaggerparser.constant.SwaggerConstant.*;
 
@@ -25,13 +27,19 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
     private final NameConverterService nameConverterService;
 
     @Override
-    public void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, List<FlutterObject> objects, Map<String, List<String>> enums) {
-        generateClients(tags, baseUrl);
-        generateObjectFiles(objects);
-        generateEnums(enums);
+    public void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, Set<FlutterObject> objects, Map<String, List<String>> enums, ByteArrayOutputStream out) {
+        ZipOutputStream zipOut = new ZipOutputStream(out);
+        generateClients(tags, baseUrl, zipOut);
+        generateObjectFiles(objects, zipOut);
+        generateEnums(enums, zipOut);
+        try {
+            zipOut.close();
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
-    private void generateClients(Map<String, List<ApiMethod>> tags, String baseUrl) {
+    private void generateClients(Map<String, List<ApiMethod>> tags, String baseUrl, ZipOutputStream zipOut) {
         tags.entrySet().forEach(tag -> {
             String filename = nameConverterService.toLowerUnderscore(tag.getKey()) + "_client";
             List<String> objects = tag.getValue().stream().map(ApiMethod::getObjects)
@@ -52,22 +60,23 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
                     "objects", objects
             );
             String content = templateProcessorService.processTemplate(params, CLIENT_TEMPLATE);
-            writeToFile(content, "result/", filename);
+            writeToFile(content, "result/api/", filename, zipOut);
         });
     }
 
-    private void writeToFile(String content, String folder, String filename) {
-        BufferedWriter writer = null;
+    private void writeToFile(String content, String folder, String filename, ZipOutputStream zipOut) {
         try {
-            writer = new BufferedWriter(new FileWriter(folder + filename + DART_EXTENSION));
-            writer.write(content);
-            writer.close();
+            ZipEntry zipEntry = new ZipEntry(folder + filename + DART_EXTENSION);
+            zipOut.putNextEntry(zipEntry);
+            byte[] bytes = content.getBytes();
+            int length = bytes.length;
+            zipOut.write(bytes, 0, length);
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
     }
 
-    private void generateObjectFiles(List<FlutterObject> objects) {
+    private void generateObjectFiles(Set<FlutterObject> objects, ZipOutputStream zipOut) {
         objects.forEach(object -> {
             String filename = nameConverterService.toLowerUnderscore(object.getName());
             List<String> relatedObjects = object.getRelatedObjects().stream()
@@ -86,11 +95,11 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
             );
             String templateName = object.isParameterized() ? PARAMETERIZED_OBJECT_TEMPLATE : OBJECT_TEMPLATE;
             String content = templateProcessorService.processTemplate(params, templateName);
-            writeToFile(content, "result/model/", filename);
+            writeToFile(content, "result/model/", filename, zipOut);
         });
     }
 
-    private void generateEnums(Map<String, List<String>> enums) {
+    private void generateEnums(Map<String, List<String>> enums, ZipOutputStream zipOut) {
         enums.forEach((name, values) -> {
             String filename = nameConverterService.toLowerUnderscore(name);
             Map<String, Object> params = Map.of(
@@ -99,7 +108,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
                     "values", values
             );
             String content = templateProcessorService.processTemplate(params, ENUM_TEMPLATE);
-            writeToFile(content, "result/model/", filename);
+            writeToFile(content, "result/model/", filename, zipOut);
         });
     }
 }

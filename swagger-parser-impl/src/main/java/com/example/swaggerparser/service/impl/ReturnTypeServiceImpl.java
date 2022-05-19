@@ -1,8 +1,6 @@
 package com.example.swaggerparser.service.impl;
 
 import com.example.swaggerparser.dto.ImportObject;
-import com.example.swaggerparser.entity.TypeMapping;
-import com.example.swaggerparser.mapper.ImportObjectMapper;
 import com.example.swaggerparser.service.ReturnTypeService;
 import com.example.swaggerparser.service.TypeMappingService;
 import com.example.swaggerparser.util.ParameterizedClassesUtil;
@@ -64,7 +62,7 @@ public class ReturnTypeServiceImpl implements ReturnTypeService {
 
     private Schema getFirstNonNullSchema(Operation operation) {
         Optional<Schema> optionalSchema = operation.getResponses().get("200").getContent().entrySet().stream().map(entry -> entry.getValue().getSchema())
-                .filter(schema -> Objects.nonNull(schema)).findFirst();
+                .filter(Objects::nonNull).findFirst();
         if (optionalSchema.isPresent()) {
             return optionalSchema.get();
         }
