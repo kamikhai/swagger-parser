@@ -1,6 +1,7 @@
 package com.example.swaggerparser.service.impl;
 
 import com.example.swaggerparser.dto.ApiMethod;
+import com.example.swaggerparser.dto.EnumObject;
 import com.example.swaggerparser.dto.FlutterObject;
 import com.example.swaggerparser.service.FileGeneratorService;
 import com.example.swaggerparser.service.NameConverterService;
@@ -27,7 +28,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
     private final NameConverterService nameConverterService;
 
     @Override
-    public void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, Set<FlutterObject> objects, Map<String, List<String>> enums, ByteArrayOutputStream out) {
+    public void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, Set<FlutterObject> objects, Set<EnumObject> enums, ByteArrayOutputStream out) {
         ZipOutputStream zipOut = new ZipOutputStream(out);
         generateClients(tags, baseUrl, zipOut);
         generateObjectFiles(objects, zipOut);
@@ -44,9 +45,8 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
             String filename = nameConverterService.toLowerUnderscore(tag.getKey()) + "_client";
             List<String> objects = tag.getValue().stream().map(ApiMethod::getObjects)
                     .flatMap(List::stream).distinct()
-                    .filter(importObject -> Objects.isNull(importObject.getImportClass()) || !importObject.getImportClass().isBlank())
                     .map(importObject -> {
-                        if (Objects.isNull(importObject.getImportClass())) {
+                        if (Objects.isNull(importObject.getImportClass()) || importObject.getImportClass().isBlank()) {
                             return String.format("model/%s.dart", nameConverterService.toLowerUnderscore(importObject.getName()));
                         } else return importObject.getImportClass();
                     })
@@ -80,9 +80,8 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         objects.forEach(object -> {
             String filename = nameConverterService.toLowerUnderscore(object.getName());
             List<String> relatedObjects = object.getRelatedObjects().stream()
-                    .filter(importObject -> Objects.isNull(importObject.getImportClass()) || !importObject.getImportClass().isBlank())
                     .map(importObject -> {
-                        if (Objects.isNull(importObject.getImportClass())) {
+                        if (Objects.isNull(importObject.getImportClass()) || importObject.getImportClass().isBlank()) {
                             return String.format("%s.dart", nameConverterService.toLowerUnderscore(importObject.getName()));
                         } else return importObject.getImportClass();
                     })
@@ -99,13 +98,13 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         });
     }
 
-    private void generateEnums(Map<String, List<String>> enums, ZipOutputStream zipOut) {
-        enums.forEach((name, values) -> {
-            String filename = nameConverterService.toLowerUnderscore(name);
+    private void generateEnums(Set<EnumObject> enums, ZipOutputStream zipOut) {
+        enums.forEach(enumObject -> {
+            String filename = nameConverterService.toLowerUnderscore(enumObject.getName());
             Map<String, Object> params = Map.of(
                     "file_name", filename,
-                    "class_name", name,
-                    "values", values
+                    "class_name", enumObject.getName(),
+                    "values", enumObject.getEnums()
             );
             String content = templateProcessorService.processTemplate(params, ENUM_TEMPLATE);
             writeToFile(content, "result/model/", filename, zipOut);

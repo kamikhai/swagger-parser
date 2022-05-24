@@ -1,13 +1,11 @@
 package com.example.swaggerparser.service;
 
+import com.example.swaggerparser.dto.EnumObject;
 import com.example.swaggerparser.dto.ImportObject;
 import com.example.swaggerparser.entity.TypeMapping;
 import io.swagger.v3.oas.models.media.Schema;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public interface TypeMappingService {
     String findFlutterTypeBySwaggerType(String type);
@@ -34,11 +32,11 @@ public interface TypeMappingService {
 
     boolean isEnum(Schema schema);
 
-    String getTypeOrEnum(String name, Schema schema, List<ImportObject> objects, Map<String, List<String>> enums);
+    String getTypeOrEnum(String name, Schema schema, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects);
 
-    String getEnum(String name, Collection<ImportObject> objects, Schema schema, Map<String, List<String>> enums);
+    String getEnum(String name, Collection<ImportObject> objects, Schema schema, Set<EnumObject> enums, List<EnumObject> enumObjects);
 
-    String getArrayTypeOrEnum(String name, Schema schema, Collection<ImportObject> objects, Map<String, List<String>> enums);
+    String getArrayTypeOrEnum(String name, Schema schema, Collection<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects);
 
     String getParameterizedClassType(String cl, String type, List<ImportObject> objects);
 }

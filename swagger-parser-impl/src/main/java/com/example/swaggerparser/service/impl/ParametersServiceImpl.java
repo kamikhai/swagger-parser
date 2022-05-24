@@ -1,7 +1,7 @@
 package com.example.swaggerparser.service.impl;
 
+import com.example.swaggerparser.dto.EnumObject;
 import com.example.swaggerparser.dto.ImportObject;
-import com.example.swaggerparser.entity.TypeMapping;
 import com.example.swaggerparser.mapper.ImportObjectMapper;
 import com.example.swaggerparser.service.NameConverterService;
 import com.example.swaggerparser.service.ParametersService;
@@ -27,9 +27,9 @@ public class ParametersServiceImpl implements ParametersService {
     private final ImportObjectMapper importObjectMapper;
 
     @Override
-    public List<String> getParameters(Operation operation, List<ImportObject> objects, Map<String, List<String>> enums) {
+    public List<String> getParameters(Operation operation, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects) {
         List<String> params = new ArrayList<>();
-        getPathAndQueryParams(operation, params, enums, objects);
+        getPathAndQueryParams(operation, params, enums, objects, enumObjects);
         getRequestBody(operation, params, objects);
         return params;
     }
@@ -70,17 +70,17 @@ public class ParametersServiceImpl implements ParametersService {
                 .build()));
     }
 
-    private void getPathAndQueryParams(Operation operation, List<String> params, Map<String, List<String>> enums, List<ImportObject> objects) {
+    private void getPathAndQueryParams(Operation operation, List<String> params, Set<EnumObject> enums, List<ImportObject> objects, List<EnumObject> enumObjects) {
         if (Objects.nonNull(operation.getParameters())) {
             operation.getParameters().forEach(parameter -> {
                 String annotation = "";
                 String type = "";
                 if (parameter.getIn().equals("path")) {
                     annotation = PATH_PARAM;
-                    type = typeMappingService.getTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enums);
+                    type = typeMappingService.getTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enums, enumObjects);
                 } else if (parameter.getIn().equals("query")) {
                     annotation = String.format(QUERY_PARAM, parameter.getName());
-                    type = getQueryParamType(parameter, objects, enums);
+                    type = getQueryParamType(parameter, objects, enums, enumObjects);
                 } else if (parameter.getIn().equals("header")) {
                     return;
                 }
@@ -98,14 +98,14 @@ public class ParametersServiceImpl implements ParametersService {
         return nameConverterService.toLowerCamel(name);
     }
 
-    private String getQueryParamType(Parameter parameter, List<ImportObject> objects, Map<String, List<String>> enums) {
+    private String getQueryParamType(Parameter parameter, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects) {
         String type;
         if (Objects.isNull(parameter.getSchema().getType())) {
             type = MAP_PARAMS;
         } else if (parameter.getSchema().getType().equals(TYPE_ARRAY)) {
-            type = typeMappingService.getArrayTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enums);
+            type = typeMappingService.getArrayTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enums, enumObjects);
         } else {
-            type = typeMappingService.getTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enums);
+            type = typeMappingService.getTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enums, enumObjects);
         }
         return type;
     }

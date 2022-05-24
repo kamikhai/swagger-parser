@@ -1,5 +1,6 @@
 package com.example.swaggerparser.service.impl;
 
+import com.example.swaggerparser.dto.EnumObject;
 import com.example.swaggerparser.dto.ImportObject;
 import com.example.swaggerparser.service.ReturnTypeService;
 import com.example.swaggerparser.service.TypeMappingService;
@@ -9,9 +10,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static com.example.swaggerparser.constant.SwaggerConstant.*;
 
@@ -21,12 +20,12 @@ public class ReturnTypeServiceImpl implements ReturnTypeService {
     private final TypeMappingService typeMappingService;
 
     @Override
-    public String getReturnType(Operation operation, List<ImportObject> objects) {
+    public String getReturnType(Operation operation, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects) {
         String type;
         if (operation.getResponses().containsKey("200") && operation.getResponses().get("200").getContent().size() > 0) {
             Schema applicationJson = getFirstNonNullSchema(operation);
             if (Objects.nonNull(applicationJson.getType())) {
-                type = getSimpleType(objects, applicationJson);
+                type = getSimpleType(objects, applicationJson, enums, enumObjects);
             } else {
                 type = getObjectType(objects, applicationJson);
             }
@@ -36,15 +35,14 @@ public class ReturnTypeServiceImpl implements ReturnTypeService {
         return String.format(FUTURE_TYPE, type);
     }
 
-    private String getSimpleType(List<ImportObject> objects, Schema applicationJson) {
+    private String getSimpleType(List<ImportObject> objects, Schema applicationJson, Set<EnumObject> enums, List<EnumObject> enumObjects) {
         String type;
         if (applicationJson.getType().equals(TYPE_ARRAY)) {
-            type = typeMappingService.getArrayType(applicationJson);
-            typeMappingService.getArrayClass(applicationJson).ifPresent(s -> objects.add(ImportObject.builder().name(s).build()));
+            type = typeMappingService.getArrayTypeOrEnum("Enum", applicationJson, objects, enums, enumObjects);
         } else if (applicationJson.getType().equals(TYPE_OBJECT)) {
             type = String.format(MAP_TYPE, typeMappingService.getType((Schema) applicationJson.getAdditionalProperties()));
         } else {
-            type = typeMappingService.getType(applicationJson);
+            type = typeMappingService.getTypeOrEnum("Enum", applicationJson, objects, enums, enumObjects);
         }
         return type;
     }

@@ -1,9 +1,11 @@
 package com.example.swaggerparser.service.impl;
 
+import com.example.swaggerparser.dto.EnumObject;
 import com.example.swaggerparser.dto.ImportObject;
 import com.example.swaggerparser.entity.TypeMapping;
 import com.example.swaggerparser.mapper.ImportObjectMapper;
 import com.example.swaggerparser.repository.TypeMappingRepository;
+import com.example.swaggerparser.service.EnumParserService;
 import com.example.swaggerparser.service.NameConverterService;
 import com.example.swaggerparser.service.TypeMappingService;
 import com.example.swaggerparser.util.ParameterizedClassesUtil;
@@ -25,6 +27,7 @@ public class TypeMappingServiceImpl implements TypeMappingService {
     private final TypeMappingRepository typeMappingRepository;
     private final NameConverterService nameConverterService;
     private final ImportObjectMapper importObjectMapper;
+    private final EnumParserService enumParserService;
 
     @Override
     public String findFlutterTypeBySwaggerType(String type) {
@@ -113,10 +116,10 @@ public class TypeMappingServiceImpl implements TypeMappingService {
     }
 
     @Override
-    public String getTypeOrEnum(String name, Schema schema, List<ImportObject> objects, Map<String, List<String>> enums) {
+    public String getTypeOrEnum(String name, Schema schema, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects) {
         String type;
         if (isEnum(schema)) {
-            type = getEnum(name, objects, schema, enums);
+            type = getEnum(name, objects, schema, enums, enumObjects);
         } else {
             type = getType(schema);
         }
@@ -124,20 +127,21 @@ public class TypeMappingServiceImpl implements TypeMappingService {
     }
 
     @Override
-    public String getEnum(String name, Collection<ImportObject> objects, Schema schema, Map<String, List<String>> enums) {
-        String type = nameConverterService.toUpperCamel(name);
-        objects.add(ImportObject.builder().name(type).importClass("").build());
-        enums.put(type, schema.getEnum());
-        return type;
+    public String getEnum(String name, Collection<ImportObject> objects, Schema schema, Set<EnumObject> enums, List<EnumObject> enumObjects) {
+        EnumObject enumObject = enumParserService.getEnumObject(schema.getEnum(), enumObjects);
+        objects.add(ImportObject.builder().name(enumObject.getName()).importClass("").build());
+        enums.add(enumObject);
+        return enumObject.getName();
     }
 
     @Override
-    public String getArrayTypeOrEnum(String name, Schema schema, Collection<ImportObject> objects, Map<String, List<String>> enums) {
+    public String getArrayTypeOrEnum(String name, Schema schema, Collection<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects) {
         String type;
         if (isEnumArray(schema)) {
-            type = nameConverterService.toUpperCamel(name);
+            EnumObject enumObject = enumParserService.getEnumObject(getArrayEnums(schema), enumObjects);
+            type = enumObject.getName();
             objects.add(ImportObject.builder().name(type).importClass("").build());
-            enums.put(type, getArrayEnums(schema));
+            enums.add(enumObject);
             type = String.format(LIST_TYPE, type);
         } else {
             type = getSimpleArrayType(schema);
@@ -153,7 +157,9 @@ public class TypeMappingServiceImpl implements TypeMappingService {
         if (typeMappingOptional.isPresent()) {
             TypeMapping typeMapping = typeMappingOptional.get();
             subClass = typeMapping.getFlutterType();
-            objects.add(importObjectMapper.toDto(typeMapping));
+            if (!typeMapping.getImportClass().isBlank()) {
+                objects.add(importObjectMapper.toDto(typeMapping));
+            }
         } else {
             objects.add(ImportObject.builder()
                     .name(subClass)

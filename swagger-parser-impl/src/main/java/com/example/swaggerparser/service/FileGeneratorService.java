@@ -1,6 +1,7 @@
 package com.example.swaggerparser.service;
 
 import com.example.swaggerparser.dto.ApiMethod;
+import com.example.swaggerparser.dto.EnumObject;
 import com.example.swaggerparser.dto.FlutterObject;
 
 import java.io.ByteArrayOutputStream;
@@ -10,5 +11,5 @@ import java.util.Set;
 
 public interface FileGeneratorService {
 
-    void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, Set<FlutterObject> objects, Map<String, List<String>> enums, ByteArrayOutputStream out);
+    void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, Set<FlutterObject> objects, Set<EnumObject> enums, ByteArrayOutputStream out);
 }
