@@ -25,6 +25,7 @@ public class SwaggerConstant {
     public static final String DART_EXTENSION = ".dart";
     public static final String PARAMETERIZATION_SYMBOL_1 = "«";
     public static final String PARAMETERIZATION_SYMBOL_2 = "»";
+    public static final String UNDEFINED_ENUM = "UndefinedEnum";
 
     // Templates
     public static final String CLIENT_TEMPLATE = "client_template.ftlh";

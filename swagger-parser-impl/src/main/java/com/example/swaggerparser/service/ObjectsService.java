@@ -6,9 +6,8 @@ import com.example.swaggerparser.dto.ImportObject;
 import io.swagger.v3.oas.models.Components;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public interface ObjectsService {
-    Set<FlutterObject> getObjects(Components components, Set<ImportObject> objectToCreate, Set<EnumObject> enums, List<EnumObject> enumObjects);
+    Set<FlutterObject> getObjects(Components components, List<ImportObject> objectToCreate, Set<EnumObject> enums, List<EnumObject> enumObjects);
 }

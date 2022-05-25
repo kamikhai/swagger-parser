@@ -19,9 +19,7 @@ public class TemplateProcessorServiceImpl implements TemplateProcessorService {
         try {
             return FreeMarkerTemplateUtils.processTemplateIntoString(
                     freeMarkerConfigurationFactoryBean.getTemplate(templateName, "UTF-8"), params);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        } catch (TemplateException e) {
+        } catch (IOException | TemplateException e) {
             throw new IllegalArgumentException(e);
         }
 

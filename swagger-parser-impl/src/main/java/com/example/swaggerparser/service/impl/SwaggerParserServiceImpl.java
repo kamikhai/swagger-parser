@@ -52,15 +52,20 @@ public class SwaggerParserServiceImpl implements SwaggerParserService {
         if (openAPI != null) {
             List<EnumObject> enumObjects = enumParserService.parseEnums(json);
             Set<EnumObject> enumsToCreate = new HashSet<>();
-            Map<String, List<ApiMethod>> tags = methodService.getTagsAndMethods(openAPI.getPaths(), endpointsToCreate, enumsToCreate, enumObjects);
+            Map<String, List<ApiMethod>> tags = methodService.getTagsAndMethodsExtended(openAPI.getPaths(), endpointsToCreate, enumsToCreate, enumObjects);
             String baseUrl = openAPI.getServers().get(0).getUrl();
-            List<ImportObject> objectToCreate = tags.entrySet().stream().map(stringListEntry -> stringListEntry.getValue().stream().map(ApiMethod::getObjects)
-                            .flatMap(List::stream)
-                            .collect(Collectors.toList())).flatMap(List::stream).distinct()
-                    .collect(Collectors.toList());
-            Set<FlutterObject> objects = objectsService.getObjects(openAPI.getComponents(), new HashSet<>(objectToCreate), enumsToCreate, enumObjects);
+            Set<FlutterObject> objects = objectsService.getObjects(openAPI.getComponents(), getObjectsToCreate(tags), enumsToCreate, enumObjects);
             fileGeneratorService.generateFiles(tags, baseUrl, objects, enumsToCreate, out);
         }
+    }
+
+    private List<ImportObject> getObjectsToCreate(Map<String, List<ApiMethod>> tags) {
+        return tags.entrySet().stream().map(stringListEntry ->
+                stringListEntry.getValue().stream()
+                        .map(ApiMethod::getObjects)
+                        .flatMap(List::stream)
+                        .collect(Collectors.toList())
+        ).flatMap(List::stream).distinct().collect(Collectors.toList());
     }
 
     @Override
@@ -68,19 +73,16 @@ public class SwaggerParserServiceImpl implements SwaggerParserService {
         String json = getJsonFromFile(file);
         OpenAPI openAPI = getOpenAPi(json);
         if (openAPI != null) {
-            List<EnumObject> enumObjects = enumParserService.parseEnums(json);
-            return methodService.getTagsAndMethods(openAPI.getPaths(), null, new HashSet<>(), enumObjects);
+            return methodService.getTagsAndMethods(openAPI.getPaths());
         }
         return Map.of();
     }
 
     @Override
     public Map<String, List<ApiMethod>> parseSchema(String url) {
-        String json = getJsonFromUrl(url);
-        OpenAPI openAPI = getOpenAPi(json);
+        OpenAPI openAPI = getOpenAPi(getJsonFromUrl(url));
         if (openAPI != null) {
-            List<EnumObject> enumObjects = enumParserService.parseEnums(json);
-            return methodService.getTagsAndMethods(openAPI.getPaths(), null, new HashSet<>(), enumObjects);
+            return methodService.getTagsAndMethods(openAPI.getPaths());
         }
         return Map.of();
     }
@@ -105,6 +107,5 @@ public class SwaggerParserServiceImpl implements SwaggerParserService {
         return new OpenAPIParser()
                 .readContents(json, null, new ParseOptions())
                 .getOpenAPI();
-
     }
 }

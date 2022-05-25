@@ -1,15 +1,12 @@
 package com.example.swaggerparser.api;
 
 import com.example.swaggerparser.dto.ApiMethod;
-import com.example.swaggerparser.dto.ImportObject;
 import com.fasterxml.jackson.annotation.JsonView;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
 

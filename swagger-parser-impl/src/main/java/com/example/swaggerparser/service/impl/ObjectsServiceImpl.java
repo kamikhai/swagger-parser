@@ -29,12 +29,12 @@ public class ObjectsServiceImpl implements ObjectsService {
     private final ImportObjectMapper importObjectMapper;
 
     @Override
-    public Set<FlutterObject> getObjects(Components components, Set<ImportObject> objectToCreate, Set<EnumObject> enums, List<EnumObject> enumObjects) {
+    public Set<FlutterObject> getObjects(Components components, List<ImportObject> objectToCreate, Set<EnumObject> enums, List<EnumObject> enumObjects) {
         Set<FlutterObject> objects = new HashSet<>();
         Map<String, Schema> all = components.getSchemas();
 
         while (!objectToCreate.isEmpty()) {
-            ImportObject o = objectToCreate.stream().findFirst().get();
+            ImportObject o = objectToCreate.stream().findFirst().orElseThrow();
             if (Objects.isNull(o.getImportClass())) {
                 String name = o.getName();
                 ParameterizationInfo parameterizationInfo = new ParameterizationInfo();
@@ -58,7 +58,7 @@ public class ObjectsServiceImpl implements ObjectsService {
         return objects;
     }
 
-    private String getFieldType(Schema schema, Set<ImportObject> relatedObjects, Set<ImportObject> objectToCreate,
+    private String getFieldType(Schema schema, Set<ImportObject> relatedObjects, List<ImportObject> objectToCreate,
                                 ParameterizationInfo parameterizationInfo, String s, Set<EnumObject> enums, List<EnumObject> enumObjects) {
         String type;
         if (Objects.isNull(schema.getType())) {
@@ -94,11 +94,11 @@ public class ObjectsServiceImpl implements ObjectsService {
         return type;
     }
 
-    private String getArrayType(Schema schema, Set<ImportObject> relatedObjects, Set<ImportObject> objectToCreate,
+    private String getArrayType(Schema schema, Set<ImportObject> relatedObjects, List<ImportObject> objectToCreate,
                                 ParameterizationInfo parameterizationInfo, String s, Set<EnumObject> enums, List<EnumObject> enumObjects) {
         String type;
         if (parameterizationInfo.isParameterized() && typeMappingService.getArrayClass(schema).isPresent()
-                && typeMappingService.getArrayClass(schema).get().equals(parameterizationInfo.getParameterizationType())) {
+                && typeMappingService.getArrayClass(schema).orElseThrow().equals(parameterizationInfo.getParameterizationType())) {
             type = "List<T>";
         } else {
             type = typeMappingService.getArrayTypeOrEnum(s, schema, relatedObjects, enums, enumObjects);
@@ -110,7 +110,7 @@ public class ObjectsServiceImpl implements ObjectsService {
         return type;
     }
 
-    private String getObjectType(Schema schema, Set<ImportObject> relatedObjects, Set<ImportObject> objectToCreate,
+    private String getObjectType(Schema schema, Set<ImportObject> relatedObjects, List<ImportObject> objectToCreate,
                                  ParameterizationInfo parameterizationInfo) {
         String type = typeMappingService.getObjectType(schema);
         if (parameterizationInfo.isParameterized() && type.equals(parameterizationInfo.getParameterizationType())) {

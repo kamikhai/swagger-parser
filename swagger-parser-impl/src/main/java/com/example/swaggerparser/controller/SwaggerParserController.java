@@ -2,13 +2,10 @@ package com.example.swaggerparser.controller;
 
 import com.example.swaggerparser.api.SwaggerParserApi;
 import com.example.swaggerparser.dto.ApiMethod;
-import com.example.swaggerparser.dto.ImportObject;
 import com.example.swaggerparser.service.SwaggerParserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.json.*;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;

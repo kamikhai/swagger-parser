@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+import static com.example.swaggerparser.constant.SwaggerConstant.UNDEFINED_ENUM;
+
 @Service
 @RequiredArgsConstructor
 public class EnumParserServiceImpl implements EnumParserService {
@@ -32,7 +34,7 @@ public class EnumParserServiceImpl implements EnumParserService {
                 Pair<String, JsonNode> pair = nodesQueue.poll();
                 JsonNode node = pair.getSecond();
                 if (node.get("enum") != null) {
-                    addEnum(node, pair.getFirst(), enumObjects, enumsNames);
+                    addEnum(node, pair.getFirst(), enumsNames);
                 } else {
                     addChildrenToQueue(node, nodesQueue);
                 }
@@ -58,7 +60,7 @@ public class EnumParserServiceImpl implements EnumParserService {
             Map.Entry<String, Set<List<String>>> entry = getFirst(enumsNames);
             int size = entry.getValue().size();
             for (int i = 1; i <= size; i++) {
-                List<String> enums = entry.getValue().stream().findFirst().get();
+                List<String> enums = entry.getValue().stream().findFirst().orElseThrow();
                 enumObjects.add(EnumObject.builder()
                         .name(nameConverterService.toUpperCamel(entry.getKey() + i))
                         .enums(enums)
@@ -73,7 +75,7 @@ public class EnumParserServiceImpl implements EnumParserService {
     private void saveReadyEnums(Map<String, Set<List<String>>> enumsNames, List<EnumObject> enumObjects) {
         while (containsOneList(enumsNames)) {
             Map.Entry<String, Set<List<String>>> entry = getFirstOneList(enumsNames);
-            List<String> enums = entry.getValue().stream().findFirst().get();
+            List<String> enums = entry.getValue().stream().findFirst().orElseThrow();
             enumObjects.add(EnumObject.builder()
                     .name(nameConverterService.toUpperCamel(entry.getKey()))
                     .enums(enums)
@@ -85,11 +87,11 @@ public class EnumParserServiceImpl implements EnumParserService {
 
     private void removeEnum(Map<String, Set<List<String>>> enumsNames, List<String> enums) {
         List<String> toDelete = new ArrayList<>();
-        enumsNames.entrySet().forEach(entry -> {
-            if (entry.getValue().contains(enums)) {
-                entry.getValue().remove(enums);
-                if (entry.getValue().isEmpty()) {
-                    toDelete.add(entry.getKey());
+        enumsNames.forEach((key, value) -> {
+            if (value.contains(enums)) {
+                value.remove(enums);
+                if (value.isEmpty()) {
+                    toDelete.add(key);
                 }
             }
         });
@@ -110,8 +112,8 @@ public class EnumParserServiceImpl implements EnumParserService {
                 .orElseThrow(() -> new IllegalArgumentException("Can't find list with size one"));
     }
 
-    private void addEnum(JsonNode node, String nodeName, List<EnumObject> enumObjects, Map<String, Set<List<String>>> enumsNames) {
-        String name = "UndefinedEnum";
+    private void addEnum(JsonNode node, String nodeName, Map<String, Set<List<String>>> enumsNames) {
+        String name = UNDEFINED_ENUM;
         if (nodeName.isBlank()) {
             name = node.get("name").asText();
         } else if (!List.of("schema", "items").contains(nodeName)) {
@@ -119,9 +121,7 @@ public class EnumParserServiceImpl implements EnumParserService {
         }
         List<String> enums = getEnums(node);
 
-        if (!enumsNames.containsKey(name)) {
-            enumsNames.put(name, new HashSet<>());
-        }
+        enumsNames.putIfAbsent(name, new HashSet<>());
         enumsNames.get(name).add(enums);
     }
 

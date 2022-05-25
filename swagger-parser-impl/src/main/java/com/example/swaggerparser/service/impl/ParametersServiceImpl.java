@@ -2,7 +2,6 @@ package com.example.swaggerparser.service.impl;
 
 import com.example.swaggerparser.dto.EnumObject;
 import com.example.swaggerparser.dto.ImportObject;
-import com.example.swaggerparser.mapper.ImportObjectMapper;
 import com.example.swaggerparser.service.NameConverterService;
 import com.example.swaggerparser.service.ParametersService;
 import com.example.swaggerparser.service.TypeMappingService;
@@ -14,7 +13,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import static com.example.swaggerparser.constant.SwaggerConstant.*;
 
@@ -24,7 +26,6 @@ import static com.example.swaggerparser.constant.SwaggerConstant.*;
 public class ParametersServiceImpl implements ParametersService {
     private final TypeMappingService typeMappingService;
     private final NameConverterService nameConverterService;
-    private final ImportObjectMapper importObjectMapper;
 
     @Override
     public List<String> getParameters(Operation operation, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects) {

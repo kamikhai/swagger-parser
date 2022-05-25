@@ -33,14 +33,28 @@ public class MethodServiceImpl implements MethodService {
     );
 
     @Override
-    public Map<String, List<ApiMethod>> getTagsAndMethods(Paths paths, List<ApiMethod> endpointsToCreate, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
+    public Map<String, List<ApiMethod>> getTagsAndMethodsExtended(Paths paths, List<ApiMethod> endpointsToCreate, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         Map<String, List<ApiMethod>> tags = new HashMap<>();
         paths.forEach((path, pathItem) ->
                 operations.forEach((operation, func) -> {
                     Operation o = func.apply(pathItem);
                     if (Objects.nonNull(o) && (Objects.isNull(endpointsToCreate)
                             || endpointsToCreate.contains(ApiMethod.builder().operation(operation).path(path).build()))) {
-                        saveToTags(createMethod(o, operation, path, enumsToCreate, enumObjects), tags);
+                        saveToTags(createMethodExtended(o, operation, path, enumsToCreate, enumObjects), tags);
+                    }
+                })
+        );
+        return tags;
+    }
+
+    @Override
+    public Map<String, List<ApiMethod>> getTagsAndMethods(Paths paths) {
+        Map<String, List<ApiMethod>> tags = new HashMap<>();
+        paths.forEach((path, pathItem) ->
+                operations.forEach((operation, func) -> {
+                    Operation o = func.apply(pathItem);
+                    if (Objects.nonNull(o)) {
+                        saveToTags(createMethod(o, operation, path), tags);
                     }
                 })
         );
@@ -55,17 +69,22 @@ public class MethodServiceImpl implements MethodService {
         }
     }
 
-    private ApiMethod createMethod(Operation o, String operation, String path, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
+    private ApiMethod createMethod(Operation o, String operation, String path) {
         ApiMethod method = new ApiMethod();
         method.setOperation(operation);
         method.setPath(path);
         method.setTags(o.getTags());
+        method.setDescription(o.getSummary());
+        return method;
+    }
+
+    private ApiMethod createMethodExtended(Operation o, String operation, String path, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
+        ApiMethod method = createMethod(o, operation, path);
         List<ImportObject> objects = new ArrayList<>();
         method.setReturnType(returnTypeService.getReturnType(o, objects, enumsToCreate, enumObjects));
         method.setMethodName(nameConverterService.toLowerCamel(o.getOperationId()));
         method.setParameters(parametersService.getParameters(o, objects, enumsToCreate, enumObjects));
         method.setObjects(objects);
-        method.setDescription(o.getSummary());
         return method;
     }
 }
