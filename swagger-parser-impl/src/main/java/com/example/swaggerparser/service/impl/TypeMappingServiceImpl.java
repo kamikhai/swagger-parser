@@ -116,10 +116,10 @@ public class TypeMappingServiceImpl implements TypeMappingService {
     }
 
     @Override
-    public String getTypeOrEnum(String name, Schema schema, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects) {
+    public String getTypeOrEnum(String name, Schema schema, List<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         String type;
         if (isEnum(schema)) {
-            type = getEnum(name, objects, schema, enums, enumObjects);
+            type = getEnum(name, objects, schema, enumsToCreate, enumObjects);
         } else {
             type = getType(schema);
         }
@@ -127,21 +127,21 @@ public class TypeMappingServiceImpl implements TypeMappingService {
     }
 
     @Override
-    public String getEnum(String name, Collection<ImportObject> objects, Schema schema, Set<EnumObject> enums, List<EnumObject> enumObjects) {
+    public String getEnum(String name, Collection<ImportObject> objects, Schema schema, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         EnumObject enumObject = enumParserService.getEnumObject(schema.getEnum(), enumObjects);
         objects.add(ImportObject.builder().name(enumObject.getName()).importClass("").build());
-        enums.add(enumObject);
+        enumsToCreate.add(enumObject);
         return enumObject.getName();
     }
 
     @Override
-    public String getArrayTypeOrEnum(String name, Schema schema, Collection<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects) {
+    public String getArrayTypeOrEnum(String name, Schema schema, Collection<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         String type;
         if (isEnumArray(schema)) {
             EnumObject enumObject = enumParserService.getEnumObject(getArrayEnums(schema), enumObjects);
             type = enumObject.getName();
             objects.add(ImportObject.builder().name(type).importClass("").build());
-            enums.add(enumObject);
+            enumsToCreate.add(enumObject);
             type = String.format(LIST_TYPE, type);
         } else {
             type = getSimpleArrayType(schema);

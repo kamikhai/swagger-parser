@@ -24,29 +24,33 @@ public class EnumParserServiceImpl implements EnumParserService {
     @Override
     public List<EnumObject> parseEnums(String json) {
         Queue<Pair<String, JsonNode>> nodesQueue = new ArrayDeque<>();
-        Map<String, Set<List<String>>> enumsNames = new HashMap<>();
-        List<EnumObject> enumObjects = new ArrayList<>();
         try {
             JsonNode root = mapper.readTree(json);
             nodesQueue.add(Pair.of("", root));
 
-            while (!nodesQueue.isEmpty()) {
-                Pair<String, JsonNode> pair = nodesQueue.poll();
-                JsonNode node = pair.getSecond();
-                if (node.get("enum") != null) {
-                    addEnum(node, pair.getFirst(), enumsNames);
-                } else {
-                    addChildrenToQueue(node, nodesQueue);
-                }
-            }
+            Map<String, Set<List<String>>> enumsNames = startBFS(nodesQueue);
+            System.out.println(enumsNames);
+            List<EnumObject> enumObjects = findBestNamesCombination(enumsNames);
+            System.out.println(enumsNames);
+            System.out.println(enumObjects);
+            return enumObjects;
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException(e);
         }
-        System.out.println(enumsNames);
-        findBestNamesCombination(enumsNames, enumObjects);
-        System.out.println(enumsNames);
-        System.out.println(enumObjects);
-        return enumObjects;
+    }
+
+    private Map<String, Set<List<String>>> startBFS(Queue<Pair<String, JsonNode>> nodesQueue) {
+        Map<String, Set<List<String>>> enumsNames = new HashMap<>();
+        while (!nodesQueue.isEmpty()) {
+            Pair<String, JsonNode> pair = nodesQueue.poll();
+            JsonNode node = pair.getSecond();
+            if (node.get("enum") != null) {
+                addEnum(node, pair.getFirst(), enumsNames);
+            } else {
+                addChildrenToQueue(node, nodesQueue);
+            }
+        }
+        return enumsNames;
     }
 
     @Override
@@ -54,9 +58,10 @@ public class EnumParserServiceImpl implements EnumParserService {
         return enumObjects.stream().filter(enumObject -> enumObject.getEnums().equals(arrayEnums)).findFirst().orElseThrow();
     }
 
-    private void findBestNamesCombination(Map<String, Set<List<String>>> enumsNames, List<EnumObject> enumObjects) {
-        saveReadyEnums(enumsNames, enumObjects);
+    private List<EnumObject> findBestNamesCombination(Map<String, Set<List<String>>> enumsNames) {
+        List<EnumObject> enumObjects = new ArrayList<>();
         while (!enumsNames.isEmpty()) {
+            saveReadyEnums(enumsNames, enumObjects);
             Map.Entry<String, Set<List<String>>> entry = getFirst(enumsNames);
             int size = entry.getValue().size();
             for (int i = 1; i <= size; i++) {
@@ -68,8 +73,8 @@ public class EnumParserServiceImpl implements EnumParserService {
                 removeEnum(enumsNames, enums);
             }
             enumsNames.remove(entry.getKey());
-            saveReadyEnums(enumsNames, enumObjects);
         }
+        return enumObjects;
     }
 
     private void saveReadyEnums(Map<String, Set<List<String>>> enumsNames, List<EnumObject> enumObjects) {
@@ -109,7 +114,7 @@ public class EnumParserServiceImpl implements EnumParserService {
 
     private Map.Entry<String, Set<List<String>>> getFirst(Map<String, Set<List<String>>> enumsNames) {
         return enumsNames.entrySet().stream().findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Can't find list with size one"));
+                .orElseThrow(() -> new IllegalArgumentException("There is no elements"));
     }
 
     private void addEnum(JsonNode node, String nodeName, Map<String, Set<List<String>>> enumsNames) {
@@ -120,12 +125,9 @@ public class EnumParserServiceImpl implements EnumParserService {
             name = nodeName;
         }
         List<String> enums = getEnums(node);
-
         enumsNames.putIfAbsent(name, new HashSet<>());
         enumsNames.get(name).add(enums);
     }
-
-
 
     private void addChildrenToQueue(JsonNode node, Queue<Pair<String, JsonNode>> nodesQueue) {
         Iterator<String> fieldNames = node.fieldNames();

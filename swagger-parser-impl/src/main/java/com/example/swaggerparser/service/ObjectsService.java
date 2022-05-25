@@ -9,5 +9,5 @@ import java.util.List;
 import java.util.Set;
 
 public interface ObjectsService {
-    Set<FlutterObject> getObjects(Components components, List<ImportObject> objectToCreate, Set<EnumObject> enums, List<EnumObject> enumObjects);
+    Set<FlutterObject> getObjects(Components components, List<ImportObject> objectToCreate, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects);
 }

@@ -8,5 +8,5 @@ import java.util.List;
 import java.util.Set;
 
 public interface ReturnTypeService {
-    String getReturnType(Operation operation, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects);
+    String getReturnType(Operation operation, List<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects);
 }

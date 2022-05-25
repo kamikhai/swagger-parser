@@ -32,11 +32,11 @@ public interface TypeMappingService {
 
     boolean isEnum(Schema schema);
 
-    String getTypeOrEnum(String name, Schema schema, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects);
+    String getTypeOrEnum(String name, Schema schema, List<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects);
 
-    String getEnum(String name, Collection<ImportObject> objects, Schema schema, Set<EnumObject> enums, List<EnumObject> enumObjects);
+    String getEnum(String name, Collection<ImportObject> objects, Schema schema, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects);
 
-    String getArrayTypeOrEnum(String name, Schema schema, Collection<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects);
+    String getArrayTypeOrEnum(String name, Schema schema, Collection<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects);
 
     String getParameterizedClassType(String cl, String type, List<ImportObject> objects);
 }

@@ -28,11 +28,12 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
     private final NameConverterService nameConverterService;
 
     @Override
-    public void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, Set<FlutterObject> objects, Set<EnumObject> enums, ByteArrayOutputStream out) {
+    public void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, Set<FlutterObject> objects,
+                              Set<EnumObject> enumsToCreate, ByteArrayOutputStream out) {
         ZipOutputStream zipOut = new ZipOutputStream(out);
         generateClients(tags, baseUrl, zipOut);
         generateObjectFiles(objects, zipOut);
-        generateEnums(enums, zipOut);
+        generateEnums(enumsToCreate, zipOut);
         try {
             zipOut.close();
         } catch (IOException e) {
@@ -98,8 +99,8 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         });
     }
 
-    private void generateEnums(Set<EnumObject> enums, ZipOutputStream zipOut) {
-        enums.forEach(enumObject -> {
+    private void generateEnums(Set<EnumObject> enumsToCreate, ZipOutputStream zipOut) {
+        enumsToCreate.forEach(enumObject -> {
             String filename = nameConverterService.toLowerUnderscore(enumObject.getName());
             Map<String, Object> params = Map.of(
                     "file_name", filename,

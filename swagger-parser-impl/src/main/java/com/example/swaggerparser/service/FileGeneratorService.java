@@ -11,5 +11,6 @@ import java.util.Set;
 
 public interface FileGeneratorService {
 
-    void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, Set<FlutterObject> objects, Set<EnumObject> enums, ByteArrayOutputStream out);
+    void generateFiles(Map<String, List<ApiMethod>> tags, String baseUrl, Set<FlutterObject> objects,
+                       Set<EnumObject> enumsToCreate, ByteArrayOutputStream out);
 }

@@ -20,12 +20,12 @@ public class ReturnTypeServiceImpl implements ReturnTypeService {
     private final TypeMappingService typeMappingService;
 
     @Override
-    public String getReturnType(Operation operation, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects) {
+    public String getReturnType(Operation operation, List<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         String type;
         if (operation.getResponses().containsKey("200") && operation.getResponses().get("200").getContent().size() > 0) {
             Schema applicationJson = getFirstNonNullSchema(operation);
             if (Objects.nonNull(applicationJson.getType())) {
-                type = getSimpleType(objects, applicationJson, enums, enumObjects);
+                type = getSimpleType(objects, applicationJson, enumsToCreate, enumObjects);
             } else {
                 type = getObjectType(objects, applicationJson);
             }
@@ -35,14 +35,14 @@ public class ReturnTypeServiceImpl implements ReturnTypeService {
         return String.format(FUTURE_TYPE, type);
     }
 
-    private String getSimpleType(List<ImportObject> objects, Schema applicationJson, Set<EnumObject> enums, List<EnumObject> enumObjects) {
+    private String getSimpleType(List<ImportObject> objects, Schema applicationJson, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         String type;
         if (applicationJson.getType().equals(TYPE_ARRAY)) {
-            type = typeMappingService.getArrayTypeOrEnum("Enum", applicationJson, objects, enums, enumObjects);
+            type = typeMappingService.getArrayTypeOrEnum("Enum", applicationJson, objects, enumsToCreate, enumObjects);
         } else if (applicationJson.getType().equals(TYPE_OBJECT)) {
             type = String.format(MAP_TYPE, typeMappingService.getType((Schema) applicationJson.getAdditionalProperties()));
         } else {
-            type = typeMappingService.getTypeOrEnum("Enum", applicationJson, objects, enums, enumObjects);
+            type = typeMappingService.getTypeOrEnum("Enum", applicationJson, objects, enumsToCreate, enumObjects);
         }
         return type;
     }

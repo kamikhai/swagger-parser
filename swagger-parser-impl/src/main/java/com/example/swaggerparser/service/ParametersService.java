@@ -8,5 +8,5 @@ import java.util.List;
 import java.util.Set;
 
 public interface ParametersService {
-    List<String> getParameters(Operation operation, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects);
+    List<String> getParameters(Operation operation, List<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects);
 }

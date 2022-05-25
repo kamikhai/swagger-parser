@@ -28,9 +28,9 @@ public class ParametersServiceImpl implements ParametersService {
     private final NameConverterService nameConverterService;
 
     @Override
-    public List<String> getParameters(Operation operation, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects) {
+    public List<String> getParameters(Operation operation, List<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         List<String> params = new ArrayList<>();
-        getPathAndQueryParams(operation, params, enums, objects, enumObjects);
+        getPathAndQueryParams(operation, params, enumsToCreate, objects, enumObjects);
         getRequestBody(operation, params, objects);
         return params;
     }
@@ -71,17 +71,17 @@ public class ParametersServiceImpl implements ParametersService {
                 .build()));
     }
 
-    private void getPathAndQueryParams(Operation operation, List<String> params, Set<EnumObject> enums, List<ImportObject> objects, List<EnumObject> enumObjects) {
+    private void getPathAndQueryParams(Operation operation, List<String> params, Set<EnumObject> enumsToCreate, List<ImportObject> objects, List<EnumObject> enumObjects) {
         if (Objects.nonNull(operation.getParameters())) {
             operation.getParameters().forEach(parameter -> {
                 String annotation = "";
                 String type = "";
                 if (parameter.getIn().equals("path")) {
                     annotation = PATH_PARAM;
-                    type = typeMappingService.getTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enums, enumObjects);
+                    type = typeMappingService.getTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enumsToCreate, enumObjects);
                 } else if (parameter.getIn().equals("query")) {
                     annotation = String.format(QUERY_PARAM, parameter.getName());
-                    type = getQueryParamType(parameter, objects, enums, enumObjects);
+                    type = getQueryParamType(parameter, objects, enumsToCreate, enumObjects);
                 } else if (parameter.getIn().equals("header")) {
                     return;
                 }
@@ -99,14 +99,14 @@ public class ParametersServiceImpl implements ParametersService {
         return nameConverterService.toLowerCamel(name);
     }
 
-    private String getQueryParamType(Parameter parameter, List<ImportObject> objects, Set<EnumObject> enums, List<EnumObject> enumObjects) {
+    private String getQueryParamType(Parameter parameter, List<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         String type;
         if (Objects.isNull(parameter.getSchema().getType())) {
             type = MAP_PARAMS;
         } else if (parameter.getSchema().getType().equals(TYPE_ARRAY)) {
-            type = typeMappingService.getArrayTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enums, enumObjects);
+            type = typeMappingService.getArrayTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enumsToCreate, enumObjects);
         } else {
-            type = typeMappingService.getTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enums, enumObjects);
+            type = typeMappingService.getTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enumsToCreate, enumObjects);
         }
         return type;
     }

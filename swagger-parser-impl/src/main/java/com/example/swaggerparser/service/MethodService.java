@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 public interface MethodService {
-    Map<String, List<ApiMethod>> getTagsAndMethodsExtended(Paths paths, List<ApiMethod> endpointsToCreate, Set<EnumObject> enums, List<EnumObject> enumObjects);
+    Map<String, List<ApiMethod>> getTagsAndMethodsExtended(Paths paths, List<ApiMethod> endpointsToCreate, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects);
 
     Map<String, List<ApiMethod>> getTagsAndMethods(Paths paths);
 }
