@@ -48,7 +48,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
                     .flatMap(List::stream).distinct()
                     .map(importObject -> {
                         if (Objects.isNull(importObject.getImportClass()) || importObject.getImportClass().isBlank()) {
-                            return String.format("model/%s.dart", nameConverterService.toLowerUnderscore(importObject.getName()));
+                            return String.format("../model/%s.dart", nameConverterService.toLowerUnderscore(importObject.getName()));
                         } else return importObject.getImportClass();
                     })
                     .collect(Collectors.toList());

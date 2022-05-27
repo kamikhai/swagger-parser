@@ -5,7 +5,6 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class SwaggerConstant {
-    public static final String OBJECTS_PATH = "#/components/schemas/";
     public static final String APPLICATION_JSON = "application/json";
     public static final String ANY_MEDIA_TYPE = "*/*";
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";

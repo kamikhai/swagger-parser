@@ -104,7 +104,7 @@ public class ParametersServiceImpl implements ParametersService {
         if (Objects.isNull(parameter.getSchema().getType())) {
             type = MAP_PARAMS;
         } else if (parameter.getSchema().getType().equals(TYPE_ARRAY)) {
-            type = typeMappingService.getArrayTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enumsToCreate, enumObjects);
+            type = typeMappingService.getArrayTypeOrEnum(parameter.getSchema(), objects, enumsToCreate, enumObjects);
         } else {
             type = typeMappingService.getTypeOrEnum(parameter.getName(), parameter.getSchema(), objects, enumsToCreate, enumObjects);
         }

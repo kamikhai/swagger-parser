@@ -38,7 +38,8 @@ public class ReturnTypeServiceImpl implements ReturnTypeService {
     private String getSimpleType(List<ImportObject> objects, Schema applicationJson, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         String type;
         if (applicationJson.getType().equals(TYPE_ARRAY)) {
-            type = typeMappingService.getArrayTypeOrEnum("Enum", applicationJson, objects, enumsToCreate, enumObjects);
+            type = typeMappingService.getArrayTypeOrEnum(applicationJson, objects, enumsToCreate, enumObjects);
+            typeMappingService.getArrayClass(applicationJson).ifPresent(s -> objects.add(ImportObject.builder().name(s).build()));
         } else if (applicationJson.getType().equals(TYPE_OBJECT)) {
             type = String.format(MAP_TYPE, typeMappingService.getType((Schema) applicationJson.getAdditionalProperties()));
         } else {

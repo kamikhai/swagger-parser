@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 import static com.example.swaggerparser.constant.SwaggerConstant.*;
+import static io.swagger.v3.oas.models.Components.COMPONENTS_SCHEMAS_REF;
 
 @Slf4j
 @Service
@@ -119,7 +120,7 @@ public class TypeMappingServiceImpl implements TypeMappingService {
     public String getTypeOrEnum(String name, Schema schema, List<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         String type;
         if (isEnum(schema)) {
-            type = getEnum(name, objects, schema, enumsToCreate, enumObjects);
+            type = getEnum(objects, schema, enumsToCreate, enumObjects);
         } else {
             type = getType(schema);
         }
@@ -127,7 +128,7 @@ public class TypeMappingServiceImpl implements TypeMappingService {
     }
 
     @Override
-    public String getEnum(String name, Collection<ImportObject> objects, Schema schema, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
+    public String getEnum(Collection<ImportObject> objects, Schema schema, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         EnumObject enumObject = enumParserService.getEnumObject(schema.getEnum(), enumObjects);
         objects.add(ImportObject.builder().name(enumObject.getName()).importClass("").build());
         enumsToCreate.add(enumObject);
@@ -135,7 +136,7 @@ public class TypeMappingServiceImpl implements TypeMappingService {
     }
 
     @Override
-    public String getArrayTypeOrEnum(String name, Schema schema, Collection<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
+    public String getArrayTypeOrEnum(Schema schema, Collection<ImportObject> objects, Set<EnumObject> enumsToCreate, List<EnumObject> enumObjects) {
         String type;
         if (isEnumArray(schema)) {
             EnumObject enumObject = enumParserService.getEnumObject(getArrayEnums(schema), enumObjects);
@@ -144,7 +145,7 @@ public class TypeMappingServiceImpl implements TypeMappingService {
             enumsToCreate.add(enumObject);
             type = String.format(LIST_TYPE, type);
         } else {
-            type = getSimpleArrayType(schema);
+            type = getArrayType(schema);
         }
         return type;
     }
@@ -169,6 +170,6 @@ public class TypeMappingServiceImpl implements TypeMappingService {
     }
 
     private String getObjectName(String ref) {
-        return ref.replace(OBJECTS_PATH, "");
+        return ref.replace(COMPONENTS_SCHEMAS_REF, "");
     }
 }

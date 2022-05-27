@@ -60,8 +60,8 @@ public class EnumParserServiceImpl implements EnumParserService {
 
     private List<EnumObject> findBestNamesCombination(Map<String, Set<List<String>>> enumsNames) {
         List<EnumObject> enumObjects = new ArrayList<>();
+        saveReadyEnums(enumsNames, enumObjects);
         while (!enumsNames.isEmpty()) {
-            saveReadyEnums(enumsNames, enumObjects);
             Map.Entry<String, Set<List<String>>> entry = getFirst(enumsNames);
             int size = entry.getValue().size();
             for (int i = 1; i <= size; i++) {
@@ -73,6 +73,7 @@ public class EnumParserServiceImpl implements EnumParserService {
                 removeEnum(enumsNames, enums);
             }
             enumsNames.remove(entry.getKey());
+            saveReadyEnums(enumsNames, enumObjects);
         }
         return enumObjects;
     }

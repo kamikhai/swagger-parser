@@ -77,7 +77,7 @@ public class ObjectsServiceImpl implements ObjectsService {
     private String getSimpleType(Schema schema, Set<ImportObject> relatedObjects, Set<EnumObject> enumsToCreate, String s, List<EnumObject> enumObjects) {
         String type;
         if (typeMappingService.isEnum(schema)) {
-            type = typeMappingService.getEnum(s, relatedObjects, schema, enumsToCreate, enumObjects);
+            type = typeMappingService.getEnum(relatedObjects, schema, enumsToCreate, enumObjects);
         } else {
             Optional<TypeMapping> typeMappingOptional = typeMappingService.getTypeMapping(schema.getType());
             if (typeMappingOptional.isPresent()) {
@@ -101,7 +101,7 @@ public class ObjectsServiceImpl implements ObjectsService {
                 && typeMappingService.getArrayClass(schema).orElseThrow().equals(parameterizationInfo.getParameterizationType())) {
             type = "List<T>";
         } else {
-            type = typeMappingService.getArrayTypeOrEnum(s, schema, relatedObjects, enumsToCreate, enumObjects);
+            type = typeMappingService.getArrayTypeOrEnum(schema, relatedObjects, enumsToCreate, enumObjects);
             typeMappingService.getArrayClass(schema).ifPresent(cl -> {
                 relatedObjects.add(ImportObject.builder().name(cl).build());
                 objectToCreate.add(ImportObject.builder().name(cl).build());
