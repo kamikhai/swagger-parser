@@ -1,9 +1,6 @@
 package com.example.swaggerparser.service.impl;
 
-import com.example.swaggerparser.dto.ApiMethod;
-import com.example.swaggerparser.dto.EnumObject;
-import com.example.swaggerparser.dto.FlutterObject;
-import com.example.swaggerparser.dto.ImportObject;
+import com.example.swaggerparser.dto.*;
 import com.example.swaggerparser.service.*;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -34,6 +31,7 @@ public class SwaggerParserServiceImpl implements SwaggerParserService {
     private final ObjectsService objectsService;
     private final FileGeneratorService fileGeneratorService;
     private final EnumParserService enumParserService;
+    private final SecurityService securityService;
 
     @SneakyThrows
     @Override
@@ -53,9 +51,10 @@ public class SwaggerParserServiceImpl implements SwaggerParserService {
 
     private void generateCode(OpenAPI openAPI, List<ApiMethod> endpointsToCreate, ByteArrayOutputStream out, String json) {
         if (openAPI != null) {
+            Map<String, SecurityInfo> securityInfoMap = securityService.getSecurityInfo(openAPI.getComponents().getSecuritySchemes());
             List<EnumObject> enumObjects = enumParserService.parseEnums(json);
             Set<EnumObject> enumsToCreate = new HashSet<>();
-            Map<String, List<ApiMethod>> tags = methodService.getTagsAndMethodsExtended(openAPI.getPaths(), endpointsToCreate, enumsToCreate, enumObjects);
+            Map<String, List<ApiMethod>> tags = methodService.getTagsAndMethodsExtended(openAPI.getPaths(), endpointsToCreate, enumsToCreate, enumObjects, securityInfoMap);
             String baseUrl = openAPI.getServers().get(0).getUrl();
             Set<FlutterObject> objects = objectsService.getObjects(openAPI.getComponents(), getObjectsToCreate(tags), enumsToCreate, enumObjects);
             fileGeneratorService.generateFiles(tags, baseUrl, objects, enumsToCreate, out);

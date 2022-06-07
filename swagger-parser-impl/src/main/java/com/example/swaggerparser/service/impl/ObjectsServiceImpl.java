@@ -67,8 +67,7 @@ public class ObjectsServiceImpl implements ObjectsService {
             type = getArrayType(schema, relatedObjects, objectToCreate, parameterizationInfo, s, enumsToCreate, enumObjects);
         } else if (schema.getType().equals(TYPE_OBJECT)) {
             type = String.format(MAP_TYPE, typeMappingService.getType((Schema) schema.getAdditionalProperties()));
-        }
-        else {
+        } else {
             type = getSimpleType(schema, relatedObjects, enumsToCreate, s, enumObjects);
         }
         return type;

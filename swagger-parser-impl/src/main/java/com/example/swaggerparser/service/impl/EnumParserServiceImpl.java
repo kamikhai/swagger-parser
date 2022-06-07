@@ -29,11 +29,7 @@ public class EnumParserServiceImpl implements EnumParserService {
             nodesQueue.add(Pair.of("", root));
 
             Map<String, Set<List<String>>> enumsNames = startBFS(nodesQueue);
-            System.out.println(enumsNames);
-            List<EnumObject> enumObjects = findBestNamesCombination(enumsNames);
-            System.out.println(enumsNames);
-            System.out.println(enumObjects);
-            return enumObjects;
+            return findBestNamesCombination(enumsNames);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException(e);
         }

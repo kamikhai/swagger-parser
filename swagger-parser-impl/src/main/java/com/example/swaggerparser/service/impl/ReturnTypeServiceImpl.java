@@ -60,7 +60,8 @@ public class ReturnTypeServiceImpl implements ReturnTypeService {
     }
 
     private Schema getFirstNonNullSchema(Operation operation) {
-        Optional<Schema> optionalSchema = operation.getResponses().get("200").getContent().entrySet().stream().map(entry -> entry.getValue().getSchema())
+        Optional<Schema> optionalSchema = operation.getResponses().get("200").getContent().entrySet().stream()
+                .map(entry -> entry.getValue().getSchema())
                 .filter(Objects::nonNull).findFirst();
         if (optionalSchema.isPresent()) {
             return optionalSchema.get();
